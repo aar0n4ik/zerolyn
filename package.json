@@ -1,0 +1,19 @@
+{
+  "name": "shieldpay",
+  "version": "0.1.0",
+  "description": "Compliant private USDC payments on Stellar using zero-knowledge proofs. Built solo for Stellar Hacks: Real-World ZK.",
+  "license": "MIT",
+  "private": true,
+  "scripts": {
+    "setup": "bash scripts/setup.sh",
+    "deploy": "bash scripts/deploy.sh",
+    "web": "cd web && python3 -m http.server 8080"
+  },
+  "keywords": ["stellar", "soroban", "zero-knowledge", "groth16", "circom", "privacy", "usdc", "compliance"],
+  "dependencies": {
+    "@stellar/stellar-sdk": "^13.0.0",
+    "@creit.tech/stellar-wallets-kit": "^1.0.0",
+    "snarkjs": "^0.7.4",
+    "circomlib": "^2.0.5"
+  }
+}

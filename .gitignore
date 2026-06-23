@@ -1,0 +1,22 @@
+# Rust / Soroban
+target/
+**/target/
+Cargo.lock
+
+# Node
+node_modules/
+
+# Circuit build artifacts
+circuits/build/
+*.ptau
+*.zkey
+*.wasm
+!web/**/*.wasm
+verification_key.json
+witness.wtns
+
+# Local secrets / env
+.env
+.soroban/
+*.log
+.DS_Store
