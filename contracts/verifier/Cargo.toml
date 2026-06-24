@@ -1,9 +1,9 @@
 [package]
 name = "shieldpay-verifier"
-version = "0.1.0"
+version = "0.2.0"
 edition = "2021"
-authors = ["ShieldPay (solo)"]
-description = "Groth16 verifier for ShieldPay shielded transfers, using Stellar BN254 host functions."
+authors = ["Zerolyn (solo)"]
+description = "Groth16 verifier for Zerolyn shielded transfers, using Stellar's native BLS12-381 host functions (Protocol 22)."
 license = "MIT"
 
 [lib]

@@ -1,40 +1,51 @@
 #![no_std]
-//! Zerolyn — Groth16 verifier (Soroban)
+//! Zerolyn — Groth16 verifier (Soroban), REAL on-chain pairing on BLS12-381.
 //!
-//! Verifies a Groth16 proof for the `transfer.circom` circuit.
-//!
-//! The pairing check follows the standard Groth16 equation:
-//!   e(A, B) == e(alpha, beta) * e(vk_x, gamma) * e(C, delta)
+//! Verifies a Groth16 proof using Stellar's native BLS12-381 host functions
+//! (available since Protocol 22 via `env.crypto().bls12_381()`), following the
+//! standard Groth16 equation:
+//!   e(-A, B) * e(alpha, beta) * e(vk_x, gamma) * e(C, delta) == 1
 //! where vk_x = IC[0] + sum_i (public_i * IC[i]).
 //!
-//! IMPORTANT (honest scope): native BN254 curve host functions are planned for
-//! a future Stellar protocol (25 "X-Ray" / 26 "Yardstick") and are NOT yet
-//! enabled on Testnet. Until they ship, this contract deploys and runs on-chain
-//! as a *demo verifier*: it enforces the Groth16 structural invariants on-chain
-//! (verifying-key / public-input shape) and treats the elliptic-curve pairing
-//! step as a stub (see `mod bn254`). When the host functions land, swap the
-//! wrappers in `mod bn254` for the real bindings — the contract logic is already
-//! wired for it. Verifying-key bytes are produced by `scripts/setup.sh`
-//! (snarkjs zkey export) and installed via `set_vk`.
+//! There is NO stub here: `pairing_check` is the host elliptic-curve pairing.
+//!
+//! Serialization (uncompressed, big-endian; produced by scripts/vk_to_args.js
+//! and scripts/proof_to_args.js):
+//!   Fp = 48 bytes, G1 = 96 bytes (x||y), G2 = 192 bytes (x.c0||x.c1||y.c0||y.c1),
+//!   Fr / public inputs = 32 bytes big-endian.
+//!
+//! The verifying key is produced by scripts/setup.sh (snarkjs zkey export over
+//! the bls12381 curve) and installed via `set_vk`.
 
-use soroban_sdk::{contract, contracterror, contractimpl, contracttype, BytesN, Env, Vec};
+use soroban_sdk::crypto::bls12_381::{Fr, G1Affine, G2Affine};
+use soroban_sdk::{
+    contract, contracterror, contractimpl, contracttype, Address, Bytes, BytesN, Env, Vec, U256,
+};
+
+// -1 mod r for the BLS12-381 scalar field r, big-endian (used to negate A).
+// r   = 0x73eda753299d7d483339d80809a1d80553bda402fffe5bfeffffffff00000001
+// r-1 = 0x73eda753299d7d483339d80809a1d80553bda402fffe5bfeffffffff00000000
+const NEG_ONE: [u8; 32] = [
+    0x73, 0xed, 0xa7, 0x53, 0x29, 0x9d, 0x7d, 0x48, 0x33, 0x39, 0xd8, 0x08, 0x09, 0xa1, 0xd8, 0x05,
+    0x53, 0xbd, 0xa4, 0x02, 0xff, 0xfe, 0x5b, 0xfe, 0xff, 0xff, 0xff, 0xff, 0x00, 0x00, 0x00, 0x00,
+];
 
 #[contracttype]
 #[derive(Clone)]
 pub struct VerifyingKey {
-    pub alpha_g1: BytesN<64>,
-    pub beta_g2: BytesN<128>,
-    pub gamma_g2: BytesN<128>,
-    pub delta_g2: BytesN<128>,
-    pub ic: Vec<BytesN<64>>, // length = num_public_inputs + 1
+    pub alpha_g1: BytesN<96>,
+    pub beta_g2: BytesN<192>,
+    pub gamma_g2: BytesN<192>,
+    pub delta_g2: BytesN<192>,
+    pub ic: Vec<BytesN<96>>, // length = num_public_inputs + 1
 }
 
 #[contracttype]
 #[derive(Clone)]
 pub struct Proof {
-    pub a: BytesN<64>,   // G1
-    pub b: BytesN<128>,  // G2
-    pub c: BytesN<64>,   // G1
+    pub a: BytesN<96>,  // G1
+    pub b: BytesN<192>, // G2
+    pub c: BytesN<96>,  // G1
 }
 
 #[contracttype]
@@ -60,7 +71,7 @@ pub struct VerifierContract;
 #[contractimpl]
 impl VerifierContract {
     /// One-time init: store admin who may set/replace the verifying key.
-    pub fn init(env: Env, admin: soroban_sdk::Address) -> Result<(), Error> {
+    pub fn init(env: Env, admin: Address) -> Result<(), Error> {
         if env.storage().instance().has(&DataKey::Admin) {
             return Err(Error::AlreadyInitialized);
         }
@@ -70,7 +81,7 @@ impl VerifierContract {
 
     /// Install the verifying key exported from the trusted setup (snarkjs).
     pub fn set_vk(env: Env, vk: VerifyingKey) -> Result<(), Error> {
-        let admin: soroban_sdk::Address = env
+        let admin: Address = env
             .storage()
             .instance()
             .get(&DataKey::Admin)
@@ -80,9 +91,9 @@ impl VerifierContract {
         Ok(())
     }
 
-    /// Verify a Groth16 proof against `public_inputs` (BN254 scalar field, BE).
-    /// Returns Ok(true) when the structural checks pass and the (stubbed)
-    /// pairing equation holds.
+    /// Verify a Groth16 proof against `public_inputs` (BLS12-381 scalar field,
+    /// 32-byte big-endian each). Runs the real pairing check on-chain and
+    /// returns Ok(true) on success.
     pub fn verify(env: Env, proof: Proof, public_inputs: Vec<BytesN<32>>) -> Result<bool, Error> {
         let vk: VerifyingKey = env
             .storage()
@@ -95,54 +106,42 @@ impl VerifierContract {
             return Err(Error::BadPublicInputs);
         }
 
-        // vk_x = IC[0] + sum_i public_i * IC[i]   (BN254 G1 MSM via host fns)
-        let mut vk_x = vk.ic.get(0).unwrap();
-        for i in 0..public_inputs.len() {
-            let scalar = public_inputs.get(i).unwrap();
-            let term = bn254::g1_mul(&env, &vk.ic.get(i + 1).unwrap(), &scalar);
-            vk_x = bn254::g1_add(&env, &vk_x, &term);
-        }
+        let bls = env.crypto().bls12_381();
 
-        // Pairing: e(-A,B) * e(alpha,beta) * e(vk_x,gamma) * e(C,delta) == 1
-        let neg_a = bn254::g1_neg(&env, &proof.a);
-        let g1s = Vec::from_array(
-            &env,
-            [neg_a, vk.alpha_g1.clone(), vk_x, proof.c.clone()],
-        );
-        let g2s = Vec::from_array(
-            &env,
-            [proof.b.clone(), vk.beta_g2.clone(), vk.gamma_g2.clone(), vk.delta_g2.clone()],
-        );
-        let ok = bn254::pairing_check(&env, &g1s, &g2s);
-        if ok {
+        // vk_x = IC[0] + MSM(IC[1..], public_inputs)
+        let mut points: Vec<G1Affine> = Vec::new(&env);
+        let mut scalars: Vec<Fr> = Vec::new(&env);
+        for i in 0..public_inputs.len() {
+            points.push_back(G1Affine::from_bytes(vk.ic.get(i + 1).unwrap()));
+            let arr = public_inputs.get(i).unwrap().to_array();
+            let u = U256::from_be_bytes(&env, &Bytes::from_array(&env, &arr));
+            scalars.push_back(Fr::from_u256(u));
+        }
+        let acc = bls.g1_msm(points, scalars);
+        let ic0 = G1Affine::from_bytes(vk.ic.get(0).unwrap());
+        let vk_x = bls.g1_add(&ic0, &acc);
+
+        // -A (negate via scalar multiplication by r-1)
+        let neg_one = Fr::from_u256(U256::from_be_bytes(&env, &Bytes::from_array(&env, &NEG_ONE)));
+        let neg_a = bls.g1_mul(&G1Affine::from_bytes(proof.a.clone()), &neg_one);
+
+        // Pairing inputs: e(-A,B) * e(alpha,beta) * e(vk_x,gamma) * e(C,delta) == 1
+        let mut g1s: Vec<G1Affine> = Vec::new(&env);
+        g1s.push_back(neg_a);
+        g1s.push_back(G1Affine::from_bytes(vk.alpha_g1.clone()));
+        g1s.push_back(vk_x);
+        g1s.push_back(G1Affine::from_bytes(proof.c.clone()));
+
+        let mut g2s: Vec<G2Affine> = Vec::new(&env);
+        g2s.push_back(G2Affine::from_bytes(proof.b.clone()));
+        g2s.push_back(G2Affine::from_bytes(vk.beta_g2.clone()));
+        g2s.push_back(G2Affine::from_bytes(vk.gamma_g2.clone()));
+        g2s.push_back(G2Affine::from_bytes(vk.delta_g2.clone()));
+
+        if bls.pairing_check(g1s, g2s) {
             Ok(true)
         } else {
             Err(Error::VerificationFailed)
         }
-    }
-}
-
-/// Wrappers over the (future) Stellar BN254 host functions.
-///
-/// Native BN254 curve ops are planned for Stellar Protocol 25 "X-Ray" / 26
-/// "Yardstick" and are NOT enabled on Testnet today, so these are pure
-/// placeholders that let the contract deploy and run on-chain now. When the
-/// host functions ship, replace each body with the real host binding (e.g.
-/// `env.crypto()` curve ops) — the call sites in `verify` already pass the
-/// right operands. Keeping them isolated here makes the swap a one-file change.
-mod bn254 {
-    use soroban_sdk::{BytesN, Env, Vec};
-
-    pub fn g1_add(_env: &Env, a: &BytesN<64>, _b: &BytesN<64>) -> BytesN<64> {
-        a.clone()
-    }
-    pub fn g1_mul(_env: &Env, p: &BytesN<64>, _s: &BytesN<32>) -> BytesN<64> {
-        p.clone()
-    }
-    pub fn g1_neg(_env: &Env, p: &BytesN<64>) -> BytesN<64> {
-        p.clone()
-    }
-    pub fn pairing_check(_env: &Env, _g1s: &Vec<BytesN<64>>, _g2s: &Vec<BytesN<128>>) -> bool {
-        true
     }
 }
