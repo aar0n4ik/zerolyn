@@ -1,8 +1,10 @@
-# Veyndra — Compliant Private Payments on Stellar
+# Zerolyn — Compliant Private Payments on Stellar
 
-> **Privacy by default, provability on demand.** Veyndra hides amounts and balances
+> **Privacy by default, provability on demand.** Zerolyn hides amounts and balances
 > with zero-knowledge proofs, while still letting auditors and regulators verify the
 > truth on-chain. Built for **Stellar Hacks: Real-World ZK**.
+
+Live demo: a multi-page web app in `index.html` + `assets/` (deploys to Vercel as a static site).
 
 ---
 
@@ -10,7 +12,7 @@
 
 Public blockchains expose everything — salaries, suppliers, balances. That kills real-world
 adoption. But full anonymity blocks KYC/AML, so institutions can't use rails they can't verify.
-Real money needs **both privacy and compliance at once**. Veyndra closes exactly that gap
+Real money needs **both privacy and compliance at once**. Zerolyn closes exactly that gap
 on Stellar, which exists to move real people's and institutions' money.
 
 ## What it does
@@ -24,7 +26,7 @@ on Stellar, which exists to move real people's and institutions' money.
 | **Proof of reserves** | A custodian is solvent (reserves ≥ liabilities), balances hidden | `pools.html` |
 | **On-chain verifier** | Any proof is checked by a Soroban contract on Stellar Testnet | `verify.html` |
 
-Plus an **Ecosystem** page (`ecosystem.html`) mapping Veyndra onto the Stellar stack
+Plus an **Ecosystem** page (`ecosystem.html`) mapping Zerolyn onto the Stellar stack
 (USDC/EURC, Freighter, Soroban, Horizon, CCTP, MoneyGram, SEP standards, Protocol 25 "X-Ray").
 
 ## Key product features
@@ -37,7 +39,7 @@ Plus an **Ecosystem** page (`ecosystem.html`) mapping Veyndra onto the Stellar s
 - **PDF compliance receipt** — download a real, Unicode-safe PDF receipt of each shielded transfer.
 - **5 languages** — English, Español, Deutsch, Русский, Українська with native translations
   (technical terms like ZK, Groth16, Soroban, KYC are intentionally kept in English).
-- **Pleasant audio feedback** — contextual Web Audio cues (mutable, with a startup chime).
+- **Blue/black dark UI** — a calm, institutional interface with zero audio and zero distractions.
 
 ---
 
@@ -68,8 +70,8 @@ pools.html            Privacy pool / proof-of-innocence + proof of reserves
 verify.html           Proof verifier (local structure + on-chain)
 ecosystem.html        Stellar ecosystem & integrations
 assets/
-  styles.css          Design system (white + colorful)
-  app.js              Core: i18n, sound, nav/footer, Freighter wallet, StrKey validation, QR
+  styles.css          Design system (blue + black, dark)
+  app.js              Core: i18n, nav/footer, Freighter wallet, StrKey validation, QR
   send.js / compliance.js / pools.js / verify.js   Page logic
   i18n.en|es|de|ru|uk.js                            Translation dictionaries (244 keys each)
 circuits/             Circom circuit(s)
@@ -108,8 +110,8 @@ the demo.
 - [x] Public repository with clear README (this file)
 - [x] Zero-knowledge is load-bearing (privacy + selective disclosure + proof of reserves)
 - [x] Built on Stellar (Soroban verifier, USDC/EURC, Freighter, Horizon, SEP standards)
-- [x] 2–3 minute demo video (record after deploy; link it here and in the footer)
-- [x] Submit on DoraHacks before the deadline
+- [ ] 2–3 minute demo video (record after deploy; link it here and in the footer)
+- [ ] Submit on DoraHacks before the deadline
 
 ## Author
 
