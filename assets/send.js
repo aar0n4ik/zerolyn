@@ -1,4 +1,4 @@
-/* ShieldPay — send page logic (honest wallet, real validation, proof pipeline, QR, PDF) */
+/* Veyndra — send page logic (honest wallet, real validation, proof pipeline, QR, PDF) */
 (function(){
 'use strict';
 var t=window.SP_t, V=window.SP_validate, ZK=window.SP_ZK, QR=window.SP_QR, W=window.SP_Wallet,
@@ -108,7 +108,7 @@ function drawReceipt(){
   x.fillStyle='#ffffff'; x.fillRect(0,0,W0,H0);
   var g=x.createLinearGradient(0,0,W0,90); g.addColorStop(0,'#7c5cff'); g.addColorStop(.55,'#2fb8ff'); g.addColorStop(1,'#ff5fa2');
   x.fillStyle=g; x.fillRect(0,0,W0,90);
-  x.fillStyle='#ffffff'; x.font='700 30px Arial,sans-serif'; x.fillText('ShieldPay',40,56);
+  x.fillStyle='#ffffff'; x.font='700 30px Arial,sans-serif'; x.fillText('Veyndra',40,56);
   x.font='600 16px Arial,sans-serif'; x.fillText(t('send_receipt'),40,80);
   x.textAlign='right'; x.fillText('Stellar Testnet',W0-40,56); x.textAlign='left';
   var rows=[[t('send_rcpt_from'),d.from],[t('send_rcpt_to'),d.to],[t('send_rcpt_amount'),'\u2022\u2022\u2022\u2022 '+d.asset+'  (hidden by zk proof)'],[t('send_rcpt_status'),t('send_rcpt_status_v')],[t('send_rcpt_proof'),'groth16 / bn254  '+d.proof],[t('send_rcpt_tx'),d.tx],[t('send_rcpt_time'),d.time.toLocaleString(document.documentElement.lang||'en')]];
@@ -122,7 +122,7 @@ function drawReceipt(){
     y+=58;
   });
   x.fillStyle='#9aa1b2'; x.font='13px Arial,sans-serif';
-  x.fillText('ShieldPay \u00b7 zero-knowledge private payments on Stellar \u00b7 verifier: Soroban (testnet)',40,H0-30);
+  x.fillText('Veyndra \u00b7 zero-knowledge private payments on Stellar \u00b7 verifier: Soroban (testnet)',40,H0-30);
   return {url:c.toDataURL('image/jpeg',0.92),w:W0,h:H0};
 }
 function b64bytes(b64){ var bin=atob(b64); var a=new Uint8Array(bin.length); for(var i=0;i<bin.length;i++) a[i]=bin.charCodeAt(i); return a; }
@@ -148,7 +148,7 @@ function downloadPDF(){
   try{
     var img=drawReceipt(); var jpg=b64bytes(img.url.split(',')[1]); var pdf=buildPDF(jpg,img.w,img.h);
     var blob=new Blob([pdf],{type:'application/pdf'}); var url=URL.createObjectURL(blob);
-    var a=document.createElement('a'); a.href=url; a.download='shieldpay-receipt-'+lastReceipt.tx.slice(0,8)+'.pdf'; document.body.appendChild(a); a.click(); a.remove();
+    var a=document.createElement('a'); a.href=url; a.download='veyndra-receipt-'+lastReceipt.tx.slice(0,8)+'.pdf'; document.body.appendChild(a); a.click(); a.remove();
     setTimeout(function(){URL.revokeObjectURL(url);},2000); S.click();
   }catch(e){ toast(t('send_fail'),'err'); }
 }

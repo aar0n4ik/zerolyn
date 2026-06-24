@@ -1,6 +1,6 @@
-# ShieldPay — Compliant Private Payments on Stellar
+# Veyndra — Compliant Private Payments on Stellar
 
-> **Privacy by default, provability on demand.** ShieldPay hides amounts and balances
+> **Privacy by default, provability on demand.** Veyndra hides amounts and balances
 > with zero-knowledge proofs, while still letting auditors and regulators verify the
 > truth on-chain. Built for **Stellar Hacks: Real-World ZK**.
 
@@ -12,7 +12,7 @@ Live demo: a multi-page web app in `index.html` + `assets/` (deploys to Vercel a
 
 Public blockchains expose everything — salaries, suppliers, balances. That kills real-world
 adoption. But full anonymity blocks KYC/AML, so institutions can't use rails they can't verify.
-Real money needs **both privacy and compliance at once**. ShieldPay closes exactly that gap
+Real money needs **both privacy and compliance at once**. Veyndra closes exactly that gap
 on Stellar, which exists to move real people's and institutions' money.
 
 ## What it does
@@ -26,7 +26,7 @@ on Stellar, which exists to move real people's and institutions' money.
 | **Proof of reserves** | A custodian is solvent (reserves ≥ liabilities), balances hidden | `pools.html` |
 | **On-chain verifier** | Any proof is checked by a Soroban contract on Stellar Testnet | `verify.html` |
 
-Plus an **Ecosystem** page (`ecosystem.html`) mapping ShieldPay onto the Stellar stack
+Plus an **Ecosystem** page (`ecosystem.html`) mapping Veyndra onto the Stellar stack
 (USDC/EURC, Freighter, Soroban, Horizon, CCTP, MoneyGram, SEP standards, Protocol 25 "X-Ray").
 
 ## Key product features

@@ -1,4 +1,4 @@
-/* ShieldPay — verify page (proof structure check + on-chain confirm) */
+/* Veyndra — verify page (proof structure check + on-chain confirm) */
 (function(){
 'use strict';
 var t=window.SP_t, S=window.SP_Sound, toast=window.SP_toast, sleep=window.SP_sleep, ZK=window.SP_ZK, CFG=window.SP_CONFIG, shorten=window.SP_shorten;
