@@ -3,9 +3,9 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>ShieldPay</title>
-<meta name="description" content="Compliant private payments on Stellar. Privacy by default, provability on demand — powered by zero-knowledge proofs and Soroban.">
-<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 48 48'%3E%3Cdefs%3E%3ClinearGradient id='g' x1='0' y1='0' x2='48' y2='48'%3E%3Cstop stop-color='%237c5cff'/%3E%3Cstop offset='.55' stop-color='%232fb8ff'/%3E%3Cstop offset='1' stop-color='%23ff5fa2'/%3E%3C/linearGradient%3E%3C/defs%3E%3Cpath d='M24 3l16 6v11c0 10-6.8 18.6-16 22-9.2-3.4-16-12-16-22V9z' fill='url(%23g)'/%3E%3C/svg%3E">
+<title>Veyndra — Private USDC payments with built-in compliance</title>
+<meta name="description" content="Veyndra brings compliant private payments to Stellar. Amounts and balances stay hidden with zero-knowledge proofs, while auditors can still verify the truth.">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 48 48'%3E%3Cdefs%3E%3ClinearGradient id='g' x1='0' y1='0' x2='48' y2='48'%3E%3Cstop stop-color='%237c5cff'/%3E%3Cstop offset='.5' stop-color='%232fb8ff'/%3E%3Cstop offset='1' stop-color='%23ff5fa2'/%3E%3C/linearGradient%3E%3C/defs%3E%3Cpath d='M24 3.2l16.4 5.7c.8.3 1.4 1.1 1.4 2v9.8c0 10.4-6.9 19.6-16.9 23.1a2.6 2.6 0 0 1-1.8 0C13.1 40.3 6.2 31.1 6.2 20.7v-9.8c0-.9.6-1.7 1.4-2z' fill='url(%23g)'/%3E%3Cpath d='M24 14.2L33.4 23.6H28V33H20V23.6H14.6Z' fill='white'/%3E%3C/svg%3E">
 <link rel="stylesheet" href="assets/styles.css">
 </head>
 <body data-title-key="home_title">
@@ -13,17 +13,17 @@
 <section class="hero">
   <div class="blob b1"></div><div class="blob b2"></div><div class="blob b3"></div>
   <div class="wrap hero-in">
-    <span class="badge" data-i18n="hero_badge">hero_badge</span>
+    <span class="eyebrow" data-i18n="hero_badge">hero_badge</span>
     <h1 class="h-xl"><span data-i18n="hero_h1a">hero_h1a</span> <span class="grad-text" data-i18n="hero_h1b">hero_h1b</span></h1>
     <p class="lead" data-i18n="hero_lead">hero_lead</p>
     <div class="hero-cta">
       <a class="btn btn-primary btn-lg" href="send.html" data-i18n="hero_cta1">hero_cta1</a>
-      <a class="btn btn-soft btn-lg" href="verify.html" data-i18n="hero_cta2">hero_cta2</a>
+      <a class="btn btn-ghost btn-lg" href="verify.html" data-i18n="hero_cta2">hero_cta2</a>
     </div>
     <div class="hero-trust">
-      <div class="st"><span class="sn" data-i18n="hero_t1n">hero_t1n</span><span class="sk" data-i18n="hero_t1l">hero_t1l</span></div>
-      <div class="st"><span class="sn" data-i18n="hero_t2n">hero_t2n</span><span class="sk" data-i18n="hero_t2l">hero_t2l</span></div>
-      <div class="st"><span class="sn" data-i18n="hero_t3n">hero_t3n</span><span class="sk" data-i18n="hero_t3l">hero_t3l</span></div>
+      <div class="t"><b data-i18n="hero_t1n">hero_t1n</b><span data-i18n="hero_t1l">hero_t1l</span></div>
+      <div class="t"><b data-i18n="hero_t2n">hero_t2n</b><span data-i18n="hero_t2l">hero_t2l</span></div>
+      <div class="t"><b data-i18n="hero_t3n">hero_t3n</b><span data-i18n="hero_t3l">hero_t3l</span></div>
     </div>
   </div>
 </section>
@@ -34,8 +34,8 @@
     <h2 class="h-lg" data-i18n="prob_h">prob_h</h2>
     <p class="lead" data-i18n="prob_lead">prob_lead</p>
     <div class="grid g3">
-      <div class="card"><div class="ic">👁️</div><h3 data-i18n="prob1_t">prob1_t</h3><p data-i18n="prob1_d">prob1_d</p></div>
-      <div class="card"><div class="ic">🚫</div><h3 data-i18n="prob2_t">prob2_t</h3><p data-i18n="prob2_d">prob2_d</p></div>
+      <div class="card"><div class="ic">🔓</div><h3 data-i18n="prob1_t">prob1_t</h3><p data-i18n="prob1_d">prob1_d</p></div>
+      <div class="card"><div class="ic">🕶️</div><h3 data-i18n="prob2_t">prob2_t</h3><p data-i18n="prob2_d">prob2_d</p></div>
       <div class="card"><div class="ic">⚖️</div><h3 data-i18n="prob3_t">prob3_t</h3><p data-i18n="prob3_d">prob3_d</p></div>
     </div>
   </div>
@@ -47,12 +47,12 @@
     <h2 class="h-lg" data-i18n="feat_h">feat_h</h2>
     <p class="lead" data-i18n="feat_lead">feat_lead</p>
     <div class="grid g3">
-      <div class="card"><div class="ic">🔒</div><h3 data-i18n="f1_t">f1_t</h3><p data-i18n="f1_d">f1_d</p><a class="more" href="send.html"><span data-i18n="feat_more">feat_more</span></a></div>
-      <div class="card"><div class="ic">🆔</div><h3 data-i18n="f2_t">f2_t</h3><p data-i18n="f2_d">f2_d</p><a class="more" href="compliance.html"><span data-i18n="feat_more">feat_more</span></a></div>
-      <div class="card"><div class="ic">🔑</div><h3 data-i18n="f3_t">f3_t</h3><p data-i18n="f3_d">f3_d</p><a class="more" href="compliance.html"><span data-i18n="feat_more">feat_more</span></a></div>
-      <div class="card"><div class="ic">🌊</div><h3 data-i18n="f4_t">f4_t</h3><p data-i18n="f4_d">f4_d</p><a class="more" href="pools.html"><span data-i18n="feat_more">feat_more</span></a></div>
-      <div class="card"><div class="ic">🏦</div><h3 data-i18n="f5_t">f5_t</h3><p data-i18n="f5_d">f5_d</p><a class="more" href="pools.html"><span data-i18n="feat_more">feat_more</span></a></div>
-      <div class="card"><div class="ic">✅</div><h3 data-i18n="f6_t">f6_t</h3><p data-i18n="f6_d">f6_d</p><a class="more" href="verify.html"><span data-i18n="feat_more">feat_more</span></a></div>
+      <div class="card"><div class="ic">🛡️</div><h3 data-i18n="f1_t">f1_t</h3><p data-i18n="f1_d">f1_d</p></div>
+      <div class="card"><div class="ic">🆔</div><h3 data-i18n="f2_t">f2_t</h3><p data-i18n="f2_d">f2_d</p></div>
+      <div class="card"><div class="ic">🔑</div><h3 data-i18n="f3_t">f3_t</h3><p data-i18n="f3_d">f3_d</p></div>
+      <div class="card"><div class="ic">🏊</div><h3 data-i18n="f4_t">f4_t</h3><p data-i18n="f4_d">f4_d</p></div>
+      <div class="card"><div class="ic">🏦</div><h3 data-i18n="f5_t">f5_t</h3><p data-i18n="f5_d">f5_d</p></div>
+      <div class="card"><div class="ic">✅</div><h3 data-i18n="f6_t">f6_t</h3><p data-i18n="f6_d">f6_d</p></div>
     </div>
   </div>
 </section>
@@ -63,10 +63,10 @@
     <h2 class="h-lg" data-i18n="how_h">how_h</h2>
     <p class="lead" data-i18n="how_lead">how_lead</p>
     <div class="steps">
-      <div class="step"><span class="dot">1</span><div><h4 data-i18n="how_s1t">how_s1t</h4><p data-i18n="how_s1d">how_s1d</p></div></div>
-      <div class="step"><span class="dot">2</span><div><h4 data-i18n="how_s2t">how_s2t</h4><p data-i18n="how_s2d">how_s2d</p></div></div>
-      <div class="step"><span class="dot">3</span><div><h4 data-i18n="how_s3t">how_s3t</h4><p data-i18n="how_s3d">how_s3d</p></div></div>
-      <div class="step"><span class="dot">4</span><div><h4 data-i18n="how_s4t">how_s4t</h4><p data-i18n="how_s4d">how_s4d</p></div></div>
+      <div class="step on"><span class="sn">1</span><div class="st"><b data-i18n="how_s1t">how_s1t</b><span data-i18n="how_s1d">how_s1d</span></div></div>
+      <div class="step on"><span class="sn">2</span><div class="st"><b data-i18n="how_s2t">how_s2t</b><span data-i18n="how_s2d">how_s2d</span></div></div>
+      <div class="step on"><span class="sn">3</span><div class="st"><b data-i18n="how_s3t">how_s3t</b><span data-i18n="how_s3d">how_s3d</span></div></div>
+      <div class="step on"><span class="sn">4</span><div class="st"><b data-i18n="how_s4t">how_s4t</b><span data-i18n="how_s4d">how_s4d</span></div></div>
     </div>
   </div>
 </section>
@@ -77,43 +77,55 @@
     <h2 class="h-lg" data-i18n="eco_h">eco_h</h2>
     <p class="lead" data-i18n="eco_lead">eco_lead</p>
     <div class="logos">
-      <div class="logo-card">Stellar</div><div class="logo-card">Soroban</div><div class="logo-card">USDC</div>
-      <div class="logo-card">EURC</div><div class="logo-card">Freighter</div><div class="logo-card">Circle</div>
-      <div class="logo-card">MoneyGram</div><div class="logo-card">Horizon</div>
+      <div class="logo-card"><span class="nm">Stellar</span><span class="ds">Settlement L1</span></div>
+      <div class="logo-card"><span class="nm">Soroban</span><span class="ds">Smart contracts</span></div>
+      <div class="logo-card"><span class="nm">USDC</span><span class="ds">Circle stablecoin</span></div>
+      <div class="logo-card"><span class="nm">EURC</span><span class="ds">Circle stablecoin</span></div>
+      <div class="logo-card"><span class="nm">Freighter</span><span class="ds">Stellar wallet</span></div>
+      <div class="logo-card"><span class="nm">CCTP</span><span class="ds">Cross-chain USDC</span></div>
+      <div class="logo-card"><span class="nm">Horizon</span><span class="ds">Network API</span></div>
+      <div class="logo-card"><span class="nm">SEP-10/12/31</span><span class="ds">Standards</span></div>
     </div>
-    <div class="center"><a class="btn btn-soft" href="ecosystem.html" data-i18n="eco_cta">eco_cta</a></div>
+    <div class="center"><a class="btn btn-soft btn-lg link-int" href="ecosystem.html" data-i18n="eco_cta">eco_cta</a></div>
   </div>
 </section>
 
-<section class="section road reveal">
+<section class="section reveal">
   <div class="wrap">
     <span class="eyebrow" data-i18n="road_eyebrow">road_eyebrow</span>
     <h2 class="h-lg" data-i18n="road_h">road_h</h2>
     <p class="lead" data-i18n="road_lead">road_lead</p>
-    <div class="steps">
-      <div class="step"><span class="chip" data-i18n="road_q1">road_q1</span><div><h4 data-i18n="road_q1t">road_q1t</h4><p data-i18n="road_q1d">road_q1d</p></div></div>
-      <div class="step"><span class="chip" data-i18n="road_q2">road_q2</span><div><h4 data-i18n="road_q2t">road_q2t</h4><p data-i18n="road_q2d">road_q2d</p></div></div>
-      <div class="step"><span class="chip" data-i18n="road_q3">road_q3</span><div><h4 data-i18n="road_q3t">road_q3t</h4><p data-i18n="road_q3d">road_q3d</p></div></div>
-      <div class="step"><span class="chip" data-i18n="road_q4">road_q4</span><div><h4 data-i18n="road_q4t">road_q4t</h4><p data-i18n="road_q4d">road_q4d</p></div></div>
-      <div class="step"><span class="chip" data-i18n="road_q5">road_q5</span><div><h4 data-i18n="road_q5t">road_q5t</h4><p data-i18n="road_q5d">road_q5d</p></div></div>
+    <div class="road">
+      <div class="r"><span class="dot"></span><div class="q" data-i18n="road_q1">road_q1</div><h4 data-i18n="road_q1t">road_q1t</h4><p data-i18n="road_q1d">road_q1d</p></div>
+      <div class="r"><span class="dot"></span><div class="q" data-i18n="road_q2">road_q2</div><h4 data-i18n="road_q2t">road_q2t</h4><p data-i18n="road_q2d">road_q2d</p></div>
+      <div class="r"><span class="dot"></span><div class="q" data-i18n="road_q3">road_q3</div><h4 data-i18n="road_q3t">road_q3t</h4><p data-i18n="road_q3d">road_q3d</p></div>
+      <div class="r"><span class="dot"></span><div class="q" data-i18n="road_q4">road_q4</div><h4 data-i18n="road_q4t">road_q4t</h4><p data-i18n="road_q4d">road_q4d</p></div>
+      <div class="r"><span class="dot"></span><div class="q" data-i18n="road_q5">road_q5</div><h4 data-i18n="road_q5t">road_q5t</h4><p data-i18n="road_q5d">road_q5d</p></div>
     </div>
   </div>
 </section>
 
-<section class="section about reveal">
+<section class="section reveal">
   <div class="wrap">
-    <span class="eyebrow" data-i18n="about_eyebrow">about_eyebrow</span>
-    <h2 class="h-lg" data-i18n="about_h">about_h</h2>
-    <p class="lead" data-i18n="about_p1">about_p1</p>
-    <p class="lead" data-i18n="about_p2">about_p2</p>
+    <div class="about">
+      <div class="ava">🧑‍💻</div>
+      <div>
+        <span class="eyebrow" data-i18n="about_eyebrow">about_eyebrow</span>
+        <h2 class="h-lg" data-i18n="about_h">about_h</h2>
+        <p class="lead" data-i18n="about_p1">about_p1</p>
+        <p class="lead" data-i18n="about_p2">about_p2</p>
+      </div>
+    </div>
   </div>
 </section>
 
-<section class="cta-band reveal">
+<section class="section reveal">
   <div class="wrap">
-    <h2 class="h-lg" data-i18n="cta_h">cta_h</h2>
-    <p class="lead" data-i18n="cta_p">cta_p</p>
-    <a class="btn btn-primary btn-lg" href="send.html" data-i18n="cta_btn">cta_btn</a>
+    <div class="cta-band">
+      <h2 class="h-lg" data-i18n="cta_h">cta_h</h2>
+      <p class="lead" data-i18n="cta_p">cta_p</p>
+      <div class="center"><a class="btn btn-primary btn-lg" href="send.html" data-i18n="cta_btn">cta_btn</a></div>
+    </div>
   </div>
 </section>
 
