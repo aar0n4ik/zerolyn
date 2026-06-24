@@ -1,5 +1,5 @@
 #![no_std]
-//! ShieldPay — shielded pool contract (Soroban)
+//! Zerolyn — shielded pool contract (Soroban)
 //!
 //! Holds USDC deposits, tracks the Poseidon commitment Merkle root, spent
 //! nullifiers, and only settles a private transfer when the Groth16 verifier
@@ -15,7 +15,7 @@ use soroban_sdk::{
 
 mod verifier {
     soroban_sdk::contractimport!(
-        file = "../verifier/target/wasm32-unknown-unknown/release/shieldpay_verifier.wasm"
+        file = "../../target/wasm32v1-none/release/shieldpay_verifier.wasm"
     );
 }
 
