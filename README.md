@@ -4,8 +4,6 @@
 > with zero-knowledge proofs, while still letting auditors and regulators verify the
 > truth on-chain. Built for **Stellar Hacks: Real-World ZK**.
 
-Live demo: a multi-page web app in `index.html` + `assets/` (deploys to Vercel as a static site).
-
 ---
 
 ## Why this exists (the problem the hackathon is about)
@@ -110,8 +108,8 @@ the demo.
 - [x] Public repository with clear README (this file)
 - [x] Zero-knowledge is load-bearing (privacy + selective disclosure + proof of reserves)
 - [x] Built on Stellar (Soroban verifier, USDC/EURC, Freighter, Horizon, SEP standards)
-- [ ] 2–3 minute demo video (record after deploy; link it here and in the footer)
-- [ ] Submit on DoraHacks before the deadline
+- [x] 2–3 minute demo video (record after deploy; link it here and in the footer)
+- [x] Submit on DoraHacks before the deadline
 
 ## Author
 
