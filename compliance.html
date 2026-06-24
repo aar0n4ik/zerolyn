@@ -1,0 +1,69 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>ShieldPay</title>
+<meta name="description" content="zkKYC and auditor view keys: prove you are allowed, not who you are. Compliance without surveillance on Stellar.">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 48 48'%3E%3Cdefs%3E%3ClinearGradient id='g' x1='0' y1='0' x2='48' y2='48'%3E%3Cstop stop-color='%237c5cff'/%3E%3Cstop offset='.55' stop-color='%232fb8ff'/%3E%3Cstop offset='1' stop-color='%23ff5fa2'/%3E%3C/linearGradient%3E%3C/defs%3E%3Cpath d='M24 3l16 6v11c0 10-6.8 18.6-16 22-9.2-3.4-16-12-16-22V9z' fill='url(%23g)'/%3E%3C/svg%3E">
+<link rel="stylesheet" href="assets/styles.css">
+</head>
+<body data-title-key="compliance_title">
+
+<section class="section">
+  <div class="wrap">
+    <span class="eyebrow" data-i18n="nav_compliance">nav_compliance</span>
+    <h1 class="h-lg" data-i18n="comp_h">comp_h</h1>
+    <p class="lead" data-i18n="comp_lead">comp_lead</p>
+
+    <div class="split">
+      <div class="panel">
+        <div class="panel-head"><h3 data-i18n="comp_kyc_h">comp_kyc_h</h3><span class="tag">zkKYC</span></div>
+        <div class="panel-body">
+          <p data-i18n="comp_kyc_lead">comp_kyc_lead</p>
+          <ul class="tight">
+            <li data-i18n="comp_kyc1">comp_kyc1</li>
+            <li data-i18n="comp_kyc2">comp_kyc2</li>
+            <li data-i18n="comp_kyc3">comp_kyc3</li>
+          </ul>
+          <button class="btn btn-primary btn-block" id="kycbtn" data-i18n="comp_kyc_btn">comp_kyc_btn</button>
+          <div class="notice good" id="kycdone" style="display:none" data-i18n="comp_kyc_done">comp_kyc_done</div>
+        </div>
+      </div>
+
+      <div class="panel">
+        <div class="panel-head"><h3 data-i18n="comp_reveal_h">comp_reveal_h</h3></div>
+        <div class="panel-body">
+          <div class="kv"><span data-i18n="comp_reveal0">comp_reveal0</span><b class="mut" data-i18n="comp_reveal_hidden">comp_reveal_hidden</b></div>
+          <div class="kv"><span data-i18n="comp_reveal1">comp_reveal1</span><b class="mut" data-i18n="comp_reveal_hidden">comp_reveal_hidden</b></div>
+          <div class="kv"><span data-i18n="comp_reveal2">comp_reveal2</span><b class="mut" data-i18n="comp_reveal_hidden">comp_reveal_hidden</b></div>
+          <div class="kv"><span data-i18n="comp_reveal3">comp_reveal3</span><b class="mut" data-i18n="comp_reveal_hidden">comp_reveal_hidden</b></div>
+          <div class="kv"><span data-i18n="comp_reveal_klabel">comp_reveal_klabel</span><b class="good" data-i18n="comp_reveal_known">comp_reveal_known</b></div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section class="section reveal">
+  <div class="wrap">
+    <span class="eyebrow" data-i18n="nav_compliance">nav_compliance</span>
+    <h2 class="h-lg" data-i18n="comp_disc_h">comp_disc_h</h2>
+    <p class="lead" data-i18n="comp_disc_lead">comp_disc_lead</p>
+    <div class="grid g3">
+      <div class="card"><div class="ic">🎯</div><h3 data-i18n="comp_card1_t">comp_card1_t</h3><p data-i18n="comp_card1_d">comp_card1_d</p></div>
+      <div class="card"><div class="ic">🔏</div><h3 data-i18n="comp_card2_t">comp_card2_t</h3><p data-i18n="comp_card2_d">comp_card2_d</p></div>
+      <div class="card"><div class="ic">♻️</div><h3 data-i18n="comp_card3_t">comp_card3_t</h3><p data-i18n="comp_card3_d">comp_card3_d</p></div>
+    </div>
+  </div>
+</section>
+
+<script src="assets/i18n.en.js"></script>
+<script src="assets/i18n.es.js"></script>
+<script src="assets/i18n.de.js"></script>
+<script src="assets/i18n.ru.js"></script>
+<script src="assets/i18n.uk.js"></script>
+<script src="assets/compliance.js"></script>
+<script src="assets/app.js"></script>
+</body>
+</html>
