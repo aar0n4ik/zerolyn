@@ -8,6 +8,7 @@ ft_docs:'Stellar ZK Docs',ft_repo:'Source code',ft_video:'Demo video',ft_dorahac
 ft_rights:'\u00a9 2026 Veyndra. Built for Stellar Hacks: Real-World ZK.',
 /* wallet */
 wallet_install:'Freighter wallet not found \u2014 opening freighter.app',wallet_connected:'Wallet connected',wallet_rejected:'Connection cancelled',wallet_disconnected:'Wallet disconnected',
+wallet_demo:'No Freighter found \u2014 connected a demo wallet so you can try the full flow.',
 wallet_connect:'Connect Freighter',wallet_disconnect:'Disconnect',wallet_not:'No wallet connected',wallet_testnet:'Stellar Testnet',
 /* ===== HOME ===== */
 home_title:'Compliant private payments on Stellar',
