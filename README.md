@@ -1,124 +1,123 @@
-<div align="center">
+# ShieldPay — Compliant Private Payments on Stellar
 
-# 🛡️ ShieldPay
+> **Privacy by default, provability on demand.** ShieldPay hides amounts and balances
+> with zero-knowledge proofs, while still letting auditors and regulators verify the
+> truth on-chain. Built for **Stellar Hacks: Real-World ZK**.
 
-### Compliant private payments on Stellar, powered by zero-knowledge proofs
-
-*Privacy by default · selective disclosure for auditors · ASP allow-list for compliance*
-
-Built **100% solo** for **Stellar Hacks: Real-World ZK** (2026)
-
-</div>
+Live demo: a multi-page web app in `index.html` + `assets/` (deploys to Vercel as a static site).
 
 ---
 
-## The one-liner
+## Why this exists (the problem the hackathon is about)
 
-**ShieldPay lets you send USDC on Stellar without revealing the amount or the counterparty — while still satisfying compliance, because an authorized auditor can selectively disclose details and sanctioned addresses are blocked by an on-chain allow-list.**
+Public blockchains expose everything — salaries, suppliers, balances. That kills real-world
+adoption. But full anonymity blocks KYC/AML, so institutions can't use rails they can't verify.
+Real money needs **both privacy and compliance at once**. ShieldPay closes exactly that gap
+on Stellar, which exists to move real people's and institutions' money.
 
-This is ZK doing *real work*: remove the proof and the pool literally cannot settle a transfer.
+## What it does
 
-## Why this matters (the real-world problem)
+| Module | What it proves (in zero knowledge) | Page |
+|---|---|---|
+| **Shielded transfers** | A USDC/EURC/XLM transfer is valid & balances reconcile, amount hidden | `send.html` |
+| **zkKYC identity** | You passed KYC, are 18+, and are not sanctioned — without revealing identity | `compliance.html` |
+| **Selective disclosure** | A one-time auditor *view key* opens exactly one transaction | `compliance.html` |
+| **Privacy pool / proof-of-innocence** | Your funds belong to a clean association set | `pools.html` |
+| **Proof of reserves** | A custodian is solvent (reserves ≥ liabilities), balances hidden | `pools.html` |
+| **On-chain verifier** | Any proof is checked by a Soroban contract on Stellar Testnet | `verify.html` |
 
-Public ledgers expose every payment amount and counterparty. That's a non-starter for salaries, B2B settlement, and institutional flows. The naive fix — full anonymity — breaks KYC/AML and regulators reject it. So real money stays off-chain.
+Plus an **Ecosystem** page (`ecosystem.html`) mapping ShieldPay onto the Stellar stack
+(USDC/EURC, Freighter, Soroban, Horizon, CCTP, MoneyGram, SEP standards, Protocol 25 "X-Ray").
 
-ShieldPay threads the needle:
+## Key product features
 
-| | Transparent chains | Fully anonymous mixers | **ShieldPay** |
-|---|---|---|---|
-| Amounts hidden | ❌ | ✅ | ✅ |
-| Counterparties hidden | ❌ | ✅ | ✅ |
-| Auditor disclosure | n/a | ❌ | ✅ (view key) |
-| Sanctioned-address blocking | ❌ | ❌ | ✅ (ASP root) |
-| Real stablecoin rails | ✅ | ⚠️ | ✅ (USDC) |
+- **Real Stellar address validation** — full StrKey base32 + CRC16 checksum check. Invalid
+  addresses and secret keys (`S…`) are rejected; the app never reports a fake success.
+- **Honest wallet state** — the "connected" indicator only turns green after a real Freighter
+  connection. No wallet = no green light, no send.
+- **SEP-7 payment requests** — generate a `web+stellar:` QR any Stellar wallet can pay.
+- **PDF compliance receipt** — download a real, Unicode-safe PDF receipt of each shielded transfer.
+- **5 languages** — English, Español, Deutsch, Русский, Українська with native translations
+  (technical terms like ZK, Groth16, Soroban, KYC are intentionally kept in English).
+- **Pleasant audio feedback** — contextual Web Audio cues (mutable, with a startup chime).
 
-## How the ZK is load-bearing
+---
 
-1. **Prove (browser):** A Circom circuit (`circuits/transfer.circom`) proves a valid shielded transfer — value conservation, note ownership, Merkle membership, and recipient ASP membership — without revealing private inputs. Proof generated client-side via WASM.
-2. **Verify (Stellar):** A Soroban Groth16 verifier (`contracts/verifier`) checks the proof on-chain using BN254 + Poseidon host functions (Protocol 25 “X-Ray” / 26 “Yardstick”).
-3. **Settle (pool):** The shielded pool (`contracts/pool`) only burns the nullifier and inserts the output commitment **if** the verifier accepts. No proof → no transfer.
-4. **Disclose (compliance):** A view key lets an auditor reconstruct the amount + counterparty for a specific transfer when legally required.
+## ⚠️ Honesty about demo data (please read)
 
-```mermaid
-flowchart LR
-  A["User device<br/>secrets + amount"] -->|Groth16 proof| B["Soroban Verifier<br/>BN254 pairing check"]
-  B -->|accept| C["Shielded Pool<br/>nullifier + commitment"]
-  C --> D["USDC settled<br/>amount hidden on-chain"]
-  E["ASP allow-list root"] -->|membership proof| B
-  C -.view key.-> F["Auditor<br/>selective disclosure"]
+This is a hackathon prototype. To keep the demo runnable in any browser **without a funded
+account**, the proving/verification pipeline runs in **demo mode** by default:
+
+- ZK proofs shown in the UI are **Groth16/bn254-shaped mock objects** generated client-side.
+- On-chain verification is **simulated** and shows a sample transaction hash **until you
+  deploy the real verifier** and fill in the contract IDs (see below).
+- The privacy circuits and Soroban verifier/pool contracts live in `circuits/` and
+  `contracts/` and are real Rust/Circom sources intended for testnet deployment.
+
+When `assets/app.js → CONFIG.verifierContractId` (and friends) are filled in, the verify page
+labels the real contract and links the real transaction. Nothing in the UI claims to have
+settled value that it hasn't.
+
+---
+
+## Project structure
+
+```
+index.html            Home (hero, problem, features, how-it-works, ecosystem, roadmap, about)
+send.html             Shielded transfer app (wallet, validation, proof pipeline, QR, PDF)
+compliance.html       zkKYC + selective disclosure
+pools.html            Privacy pool / proof-of-innocence + proof of reserves
+verify.html           Proof verifier (local structure + on-chain)
+ecosystem.html        Stellar ecosystem & integrations
+assets/
+  styles.css          Design system (white + colorful)
+  app.js              Core: i18n, sound, nav/footer, Freighter wallet, StrKey validation, QR
+  send.js / compliance.js / pools.js / verify.js   Page logic
+  i18n.en|es|de|ru|uk.js                            Translation dictionaries (244 keys each)
+circuits/             Circom circuit(s)
+contracts/            Soroban verifier / pool / ASP contracts (Rust)
+scripts/              setup.sh, deploy.sh, vk_to_args.js
+docs/ARCHITECTURE.md  Architecture notes
 ```
 
-## Architecture
+## Run locally
 
-```
-shieldpay/
-├─ circuits/transfer.circom        # ZK circuit (Poseidon + Merkle, 20-level tree)
-├─ contracts/
-│  ├─ verifier/                    # Groth16 verifier (Soroban, BN254 host fns)
-│  ├─ pool/                        # shielded USDC pool (deposit / transfer)
-│  └─ asp/                         # ASP allow-list root contract (compliance)
-├─ web/                            # white + colorful landing & live demo
-├─ scripts/setup.sh                # circuit compile + trusted setup (snarkjs)
-├─ scripts/deploy.sh               # build + deploy contracts to testnet
-└─ docs/ARCHITECTURE.md            # deep dive + threat model
-```
-
-## Tech stack
-
-- **ZK:** Circom 2 + Groth16 (snarkjs) — chosen for the cheapest on-chain verification.
-- **Hashing:** Poseidon (matches Stellar's native host function for cheap on-chain recompute).
-- **Chain:** Stellar / Soroban (Rust), BN254 pairing via Protocol 25/26 host functions.
-- **Asset:** USDC (Stellar Asset Contract).
-- **Frontend:** single-file site, Web Audio API, zero build step.
-
-## Quickstart
-
-> Requires Rust + the `wasm32-unknown-unknown` target, the Stellar CLI, Node 18+, and Circom 2.
+It's a static site — no build step:
 
 ```bash
-# 1. Compile circuit + run a (demo) trusted setup
-bash scripts/setup.sh
-
-# 2. Build & deploy the three contracts to Stellar testnet
-bash scripts/deploy.sh
-
-# 3. Serve the frontend
-cd web && python3 -m http.server 8080
-# open http://localhost:8080
+# any static server, e.g.
+python3 -m http.server 8080
+# then open http://localhost:8080
 ```
 
-After `deploy.sh`, paste the printed contract IDs into `web/js/app.js` → `CONFIG`.
+## Deploy (Vercel)
 
-## Live demo + verification
+The repo includes `vercel.json` (`cleanUrls`, no trailing slash). Import the repo in Vercel
+and deploy — the root `index.html` is served directly. No environment variables required for
+the demo.
 
-- **Demo video:** _<link — 2–3 min walkthrough>_
-- **Deployed verifier (testnet):** _<contract id>_
-- **Example verified tx hash:** _<stellar.expert link>_
+## Going live on Testnet (optional, for real proofs)
 
-> The on-screen demo simulates the flow for instant feedback; the `Send` path is wired (`web/js/app.js`) to generate a real Groth16 proof and submit it to the deployed verifier on testnet.
+1. Install the Stellar CLI and Rust toolchain.
+2. `bash scripts/setup.sh` — compiles the circuit and builds the Soroban contracts.
+3. `bash scripts/deploy.sh` — deploys the verifier/pool contracts to **Stellar Testnet**
+   and prints their contract IDs.
+4. Paste those IDs into `assets/app.js → CONFIG.verifierContractId` / `poolContractId`.
+5. Reload `verify.html` — proofs are now checked on-chain with a real transaction hash.
 
-## Roadmap (2026 → 2027)
+## Hackathon submission checklist
 
-- **Q3 2026** — Win & harden: open-source circuits + verifier, full test suite, run OpenZeppelin Soroban security detectors.
-- **Q4 2026** — Mainnet alpha (capped) + Stellar Wallets Kit + start formal audit.
-- **Q1 2027** — Compliance SDK: drop-in view-key disclosure + ASP integration for issuers/payroll/exchanges.
-- **Q2 2027** — Confidential Token standard alignment: hidden balances, public addresses.
-- **Q3 2027** — Private remittance corridor: fiat on-ramp → shielded transfer → fiat off-ramp with compliance proofs.
+- [x] Public repository with clear README (this file)
+- [x] Zero-knowledge is load-bearing (privacy + selective disclosure + proof of reserves)
+- [x] Built on Stellar (Soroban verifier, USDC/EURC, Freighter, Horizon, SEP standards)
+- [ ] 2–3 minute demo video (record after deploy; link it here and in the footer)
+- [ ] Submit on DoraHacks before the deadline
 
-## About the author
+## Author
 
-Designed and built **entirely solo by a 17-year-old developer** — circuits, contracts, disclosure layer, and frontend. From idea to a working Stellar-testnet demo.
-
-## Credits & prior art
-
-- Nethermind `stellar-private-payments` (Circom + Groth16 + ASP research PoC) — inspiration for the privacy-pool design. *Unaudited research code; testnet only.*
-- `stellar/soroban-examples` Groth16 verifier.
-- Stellar developer docs: ZK & privacy guides, Protocol 25/26 release notes.
-
-## Security & status
-
-⚠️ **Testnet / hackathon prototype.** The trusted setup in `setup.sh` is a demo ceremony, the BN254 host-function bindings target Protocol 25/26, and nothing here is audited. Do **not** use with real funds.
+Designed, built, and shipped solo by a 17-year-old developer — circuits, Soroban contracts,
+and this interface. Socials are in the site footer (GitHub → X → Instagram).
 
 ## License
 
-MIT — see [LICENSE](./LICENSE).
+MIT — see `LICENSE`.
