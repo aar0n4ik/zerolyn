@@ -1,0 +1,54 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>ShieldPay</title>
+<meta name="description" content="Privacy pools with proof-of-innocence and proof of reserves: privacy honest users can defend, on Stellar with zero-knowledge proofs.">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 48 48'%3E%3Cdefs%3E%3ClinearGradient id='g' x1='0' y1='0' x2='48' y2='48'%3E%3Cstop stop-color='%237c5cff'/%3E%3Cstop offset='.55' stop-color='%232fb8ff'/%3E%3Cstop offset='1' stop-color='%23ff5fa2'/%3E%3C/linearGradient%3E%3C/defs%3E%3Cpath d='M24 3l16 6v11c0 10-6.8 18.6-16 22-9.2-3.4-16-12-16-22V9z' fill='url(%23g)'/%3E%3C/svg%3E">
+<link rel="stylesheet" href="assets/styles.css">
+</head>
+<body data-title-key="pools_title">
+
+<section class="section">
+  <div class="wrap">
+    <span class="eyebrow" data-i18n="nav_pools">nav_pools</span>
+    <h1 class="h-lg" data-i18n="pool_h">pool_h</h1>
+    <p class="lead" data-i18n="pool_lead">pool_lead</p>
+
+    <div class="split">
+      <div class="panel">
+        <div class="panel-head"><h3 data-i18n="pool_inn_h">pool_inn_h</h3><span class="tag">ASP</span></div>
+        <div class="panel-body">
+          <p data-i18n="pool_inn_lead">pool_inn_lead</p>
+          <div class="kv"><span data-i18n="pool_inn_set">pool_inn_set</span><b><span id="pooln">128</span> <span data-i18n="pool_inn_members">pool_inn_members</span></b></div>
+          <div class="kv"><span data-i18n="pool_inn_dep">pool_inn_dep</span><b class="mono" id="yourdep"></b></div>
+          <button class="btn btn-primary btn-block" id="innbtn" data-i18n="pool_inn_btn">pool_inn_btn</button>
+          <div class="notice good" id="inndone" style="display:none" data-i18n="pool_inn_done">pool_inn_done</div>
+        </div>
+      </div>
+
+      <div class="panel">
+        <div class="panel-head"><h3 data-i18n="por_h">por_h</h3><span class="tag">PoR</span></div>
+        <div class="panel-body">
+          <p data-i18n="por_lead">por_lead</p>
+          <div class="kv"><span data-i18n="por_reserves">por_reserves</span><b class="mut">••••••</b></div>
+          <div class="kv"><span data-i18n="por_liab">por_liab</span><b class="mut">••••••</b></div>
+          <button class="btn btn-primary btn-block" id="porbtn" data-i18n="por_btn">por_btn</button>
+          <div class="notice good" id="pordone" style="display:none" data-i18n="por_done">por_done</div>
+          <p class="hint" data-i18n="por_note">por_note</p>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<script src="assets/i18n.en.js"></script>
+<script src="assets/i18n.es.js"></script>
+<script src="assets/i18n.de.js"></script>
+<script src="assets/i18n.ru.js"></script>
+<script src="assets/i18n.uk.js"></script>
+<script src="assets/pools.js"></script>
+<script src="assets/app.js"></script>
+</body>
+</html>
