@@ -1,20 +1,23 @@
 #![no_std]
-//! ShieldPay — Groth16 verifier (Soroban)
+//! Zerolyn — Groth16 verifier (Soroban)
 //!
-//! Verifies a Groth16 proof for the `transfer.circom` circuit using Stellar's
-//! native BN254 host functions (Protocol 25 "X-Ray" / 26 "Yardstick").
+//! Verifies a Groth16 proof for the `transfer.circom` circuit.
 //!
-//! The pairing check implemented here is the standard Groth16 equation:
+//! The pairing check follows the standard Groth16 equation:
 //!   e(A, B) == e(alpha, beta) * e(vk_x, gamma) * e(C, delta)
 //! where vk_x = IC[0] + sum_i (public_i * IC[i]).
 //!
-//! NOTE: This binds to the BN254 host functions exposed by the Stellar host.
-//! The function signatures mirror `stellar/soroban-examples/groth16_verifier`.
-//! On networks before those host fns are enabled, run against the provided
-//! testnet build. Verifying key bytes are produced by `scripts/setup.sh`
+//! IMPORTANT (honest scope): native BN254 curve host functions are planned for
+//! a future Stellar protocol (25 "X-Ray" / 26 "Yardstick") and are NOT yet
+//! enabled on Testnet. Until they ship, this contract deploys and runs on-chain
+//! as a *demo verifier*: it enforces the Groth16 structural invariants on-chain
+//! (verifying-key / public-input shape) and treats the elliptic-curve pairing
+//! step as a stub (see `mod bn254`). When the host functions land, swap the
+//! wrappers in `mod bn254` for the real bindings — the contract logic is already
+//! wired for it. Verifying-key bytes are produced by `scripts/setup.sh`
 //! (snarkjs zkey export) and installed via `set_vk`.
 
-use soroban_sdk::{contract, contracterror, contractimpl, contracttype, Bytes, BytesN, Env, Vec};
+use soroban_sdk::{contract, contracterror, contractimpl, contracttype, BytesN, Env, Vec};
 
 #[contracttype]
 #[derive(Clone)]
@@ -78,7 +81,8 @@ impl VerifierContract {
     }
 
     /// Verify a Groth16 proof against `public_inputs` (BN254 scalar field, BE).
-    /// Returns Ok(true) when the pairing equation holds.
+    /// Returns Ok(true) when the structural checks pass and the (stubbed)
+    /// pairing equation holds.
     pub fn verify(env: Env, proof: Proof, public_inputs: Vec<BytesN<32>>) -> Result<bool, Error> {
         let vk: VerifyingKey = env
             .storage()
@@ -86,8 +90,8 @@ impl VerifierContract {
             .get(&DataKey::Vk)
             .ok_or(Error::NotInitialized)?;
 
-        // IC length must equal public inputs + 1
-        if vk.ic.len() != public_inputs.len() + 1 {
+        // IC length must equal public inputs + 1, and there must be inputs.
+        if public_inputs.is_empty() || vk.ic.len() != public_inputs.len() + 1 {
             return Err(Error::BadPublicInputs);
         }
 
@@ -118,44 +122,27 @@ impl VerifierContract {
     }
 }
 
-/// Thin wrappers over the Stellar BN254 host functions (Protocol 25/26).
-/// These delegate to the curve host fns rather than re-implementing field
-/// arithmetic in wasm — that is the whole point of the X-Ray/Yardstick upgrade.
+/// Wrappers over the (future) Stellar BN254 host functions.
+///
+/// Native BN254 curve ops are planned for Stellar Protocol 25 "X-Ray" / 26
+/// "Yardstick" and are NOT enabled on Testnet today, so these are pure
+/// placeholders that let the contract deploy and run on-chain now. When the
+/// host functions ship, replace each body with the real host binding (e.g.
+/// `env.crypto()` curve ops) — the call sites in `verify` already pass the
+/// right operands. Keeping them isolated here makes the swap a one-file change.
 mod bn254 {
     use soroban_sdk::{BytesN, Env, Vec};
 
-    extern "C" {
-        fn bn254_g1_add(a: u64, b: u64) -> u64;
-        fn bn254_g1_mul(p: u64, s: u64) -> u64;
-        fn bn254_g1_neg(p: u64) -> u64;
-        fn bn254_multi_pairing_check(g1s: u64, g2s: u64) -> u64;
-    }
-
-    pub fn g1_add(env: &Env, a: &BytesN<64>, b: &BytesN<64>) -> BytesN<64> {
-        // In a real build these convert via the host Val ABI. Kept explicit so
-        // the binding points are obvious and auditable.
-        let _ = (env, a, b);
-        unsafe {
-            let _r = bn254_g1_add(0, 0);
-        }
+    pub fn g1_add(_env: &Env, a: &BytesN<64>, _b: &BytesN<64>) -> BytesN<64> {
         a.clone()
     }
-    pub fn g1_mul(env: &Env, p: &BytesN<64>, s: &BytesN<32>) -> BytesN<64> {
-        let _ = (env, s);
-        unsafe {
-            let _r = bn254_g1_mul(0, 0);
-        }
+    pub fn g1_mul(_env: &Env, p: &BytesN<64>, _s: &BytesN<32>) -> BytesN<64> {
         p.clone()
     }
-    pub fn g1_neg(env: &Env, p: &BytesN<64>) -> BytesN<64> {
-        let _ = env;
-        unsafe {
-            let _r = bn254_g1_neg(0);
-        }
+    pub fn g1_neg(_env: &Env, p: &BytesN<64>) -> BytesN<64> {
         p.clone()
     }
-    pub fn pairing_check(env: &Env, g1s: &Vec<BytesN<64>>, g2s: &Vec<BytesN<128>>) -> bool {
-        let _ = (env, g1s, g2s);
-        unsafe { bn254_multi_pairing_check(0, 0) == 1 }
+    pub fn pairing_check(_env: &Env, _g1s: &Vec<BytesN<64>>, _g2s: &Vec<BytesN<128>>) -> bool {
+        true
     }
 }
