@@ -1,4 +1,4 @@
-/* ShieldPay core: i18n, sound, nav/footer, wallet, validation, QR */
+/* Veyndra core: i18n, sound, nav/footer, wallet, validation, QR */
 (function(){
 'use strict';
 
@@ -11,7 +11,7 @@ const CONFIG = {
   verifierContractId:'',
   poolContractId:'',
   demoTxHash:'',
-  social:{ github:'#', x:'#', instagram:'#' },
+  social:{ github:'https://github.com/aar0n4ik', x:'https://x.com/_AARON4IK_', instagram:'https://www.instagram.com/bohdan.aaron4ik/' },
   assets:[
     {code:'USDC',issuer:'GBBD47IF6LWK7P7MDEVSCWR7DPUWV3NY3DTQEVFL4NAT4AQH3ZLLFLA5',label:'USD Coin'},
     {code:'EURC',issuer:'GB3Q6QDZYTHWT7E5PVS3W7FUT5GVAFC5KSZFFLPU25GO7VTC3NM2ZTVO',label:'Euro Coin'},
@@ -39,7 +39,7 @@ function applyLang(code){
   document.querySelectorAll('[data-i18n]').forEach(el=>{ const k=el.getAttribute('data-i18n'); const v=(d[k]!=null?d[k]:(window.I18N.en&&window.I18N.en[k])); if(v!=null) el.textContent=v; });
   document.querySelectorAll('[data-i18n-html]').forEach(el=>{ const k=el.getAttribute('data-i18n-html'); const v=(d[k]!=null?d[k]:(window.I18N.en&&window.I18N.en[k])); if(v!=null) el.innerHTML=v; });
   document.querySelectorAll('[data-i18n-ph]').forEach(el=>{ const k=el.getAttribute('data-i18n-ph'); const v=(d[k]!=null?d[k]:(window.I18N.en&&window.I18N.en[k])); if(v!=null) el.setAttribute('placeholder',v); });
-  if(document.title.indexOf('ShieldPay')<0||true){ const pk=document.body.getAttribute('data-title-key'); if(pk&&d[pk]) document.title=d[pk]+' \u2014 ShieldPay'; }
+  if(document.title.indexOf('Veyndra')<0||true){ const pk=document.body.getAttribute('data-title-key'); if(pk&&d[pk]) document.title=d[pk]+' \u2014 Veyndra'; }
   const lb=document.querySelector('.lang-btn .flag'), ln=document.querySelector('.lang-btn .nm'); const L=LANGS.find(x=>x.code===code);
   if(lb&&L) lb.textContent=L.flag; if(ln&&L) ln.textContent=L.code.toUpperCase();
   document.querySelectorAll('.lang-menu button').forEach(b=>b.classList.toggle('sel',b.dataset.code===code));
@@ -70,7 +70,7 @@ window.SP_toast=toast;
 
 /* ---------------- BRAND SVGS ---------------- */
 const SVG={
-  logo:'<svg class="logo" viewBox="0 0 48 48" fill="none" xmlns="http://www.w3.org/2000/svg"><defs><linearGradient id="spg" x1="0" y1="0" x2="48" y2="48"><stop stop-color="#7c5cff"/><stop offset=".55" stop-color="#2fb8ff"/><stop offset="1" stop-color="#ff5fa2"/></linearGradient></defs><path d="M24 3l16 6v11c0 10-6.8 18.6-16 22-9.2-3.4-16-12-16-22V9l16-6z" fill="url(#spg)"/><path d="M24 16.5l-7 4v6.2c0 .9.5 1.7 1.3 2.1L24 32l5.7-3.2c.8-.4 1.3-1.2 1.3-2.1V20.5l-7-4z" fill="#fff" opacity=".95"/></svg>',
+  logo:'<svg class="logo" viewBox="0 0 48 48" fill="none" xmlns="http://www.w3.org/2000/svg"><defs><linearGradient id="spg" x1="6" y1="3" x2="42" y2="45" gradientUnits="userSpaceOnUse"><stop stop-color="#7c5cff"/><stop offset=".5" stop-color="#2fb8ff"/><stop offset="1" stop-color="#ff5fa2"/></linearGradient></defs><path d="M24 3.2l16.4 5.7c.8.3 1.4 1.1 1.4 2v9.8c0 10.4-6.9 19.6-16.9 23.1a2.6 2.6 0 0 1-1.8 0C13.1 40.3 6.2 31.1 6.2 20.7v-9.8c0-.9.6-1.7 1.4-2L24 3.2z" fill="url(#spg)"/><path d="M24 14.2L33.4 23.6H28V33H20V23.6H14.6Z" fill="#fff" fill-opacity=".96"/><path d="M33.1 11.4l.85 2.35 2.35.85-2.35.85-.85 2.35-.85-2.35-2.35-.85 2.35-.85z" fill="#fff" fill-opacity=".9"/></svg>',
   github:'<svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg" aria-hidden="true"><path fill="#181717" d="M12 .5C5.7.5.5 5.7.5 12.1c0 5.1 3.3 9.4 7.9 11 .6.1.8-.3.8-.6v-2c-3.2.7-3.9-1.5-3.9-1.5-.5-1.3-1.3-1.7-1.3-1.7-1.1-.7.1-.7.1-.7 1.2.1 1.8 1.2 1.8 1.2 1 1.8 2.7 1.3 3.4 1 .1-.8.4-1.3.7-1.6-2.6-.3-5.3-1.3-5.3-5.7 0-1.3.5-2.3 1.2-3.1-.1-.3-.5-1.5.1-3.1 0 0 1-.3 3.3 1.2a11.5 11.5 0 016 0c2.3-1.5 3.3-1.2 3.3-1.2.6 1.6.2 2.8.1 3.1.8.8 1.2 1.8 1.2 3.1 0 4.4-2.7 5.4-5.3 5.7.4.4.8 1.1.8 2.2v3.3c0 .3.2.7.8.6 4.6-1.6 7.9-5.9 7.9-11C23.5 5.7 18.3.5 12 .5z"/></svg>',
   x:'<svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg" aria-hidden="true"><path fill="#000" d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24h-6.66l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231 5.45-6.231zm-1.161 17.52h1.833L7.084 4.126H5.117L17.083 19.77z"/></svg>',
   instagram:'<svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg" aria-hidden="true"><defs><radialGradient id="ig" cx=".3" cy="1" r="1.1"><stop offset="0" stop-color="#fdf497"/><stop offset=".15" stop-color="#fdf497"/><stop offset=".35" stop-color="#fd5949"/><stop offset=".6" stop-color="#d6249f"/><stop offset=".9" stop-color="#285AEB"/></radialGradient></defs><rect x="1.5" y="1.5" width="21" height="21" rx="6" fill="url(#ig)"/><circle cx="12" cy="12" r="4.2" fill="none" stroke="#fff" stroke-width="2"/><circle cx="17.4" cy="6.6" r="1.4" fill="#fff"/></svg>',
@@ -94,7 +94,7 @@ function buildNav(){
   const menu=LANGS.map(l=>'<button data-code="'+l.code+'"><span class="flag">'+l.flag+'</span><span>'+l.name+'</span></button>').join('');
   const h=document.createElement('header'); h.className='nav';
   h.innerHTML='<div class="wrap nav-in">'+
-    '<a class="brand" href="index.html">'+SVG.logo+'<span>ShieldPay</span></a>'+
+    '<a class="brand" href="index.html">'+SVG.logo+'<span>Veyndra</span></a>'+
     '<nav class="nav-links" id="navlinks">'+links+'</nav>'+
     '<div class="nav-right">'+
       '<a class="btn btn-primary" href="send.html" data-i18n="nav_cta" style="padding:10px 18px">nav_cta</a>'+
@@ -121,7 +121,7 @@ function buildFooter(){
     .map(r=>'<a href="'+r[1]+'" data-i18n="'+r[0]+'" '+(r[1].startsWith('http')?'target="_blank" rel="noopener"':'')+'>'+r[0]+'</a>').join('');
   f.innerHTML='<div class="wrap">'+
    '<div class="ft-top">'+
-     '<div><a class="brand" href="index.html">'+SVG.logo+'<span>ShieldPay</span></a>'+
+     '<div><a class="brand" href="index.html">'+SVG.logo+'<span>Veyndra</span></a>'+
        '<p class="ft-desc" data-i18n="ft_desc">ft_desc</p>'+
        '<div class="socials">'+
          '<a class="soc" data-soc="github" href="'+CONFIG.social.github+'" target="_blank" rel="noopener" aria-label="GitHub">'+SVG.github+(CONFIG.social.github==='#'?'<span class="soon">SOON</span>':'')+'</a>'+
