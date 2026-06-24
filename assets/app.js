@@ -1,4 +1,4 @@
-/* Veyndra core: i18n, nav/footer, wallet, validation, QR (no audio) */
+/* Zerolyn core: i18n, nav/footer, wallet, validation, QR (no audio) */
 (function(){
 'use strict';
 
@@ -46,7 +46,7 @@ function applyLang(code){
   document.querySelectorAll('[data-i18n]').forEach(el=>{ const k=el.getAttribute('data-i18n'); const v=(d[k]!=null?d[k]:(window.I18N.en&&window.I18N.en[k])); if(v!=null) el.textContent=v; });
   document.querySelectorAll('[data-i18n-html]').forEach(el=>{ const k=el.getAttribute('data-i18n-html'); const v=(d[k]!=null?d[k]:(window.I18N.en&&window.I18N.en[k])); if(v!=null) el.innerHTML=v; });
   document.querySelectorAll('[data-i18n-ph]').forEach(el=>{ const k=el.getAttribute('data-i18n-ph'); const v=(d[k]!=null?d[k]:(window.I18N.en&&window.I18N.en[k])); if(v!=null) el.setAttribute('placeholder',v); });
-  const pk=document.body.getAttribute('data-title-key'); if(pk&&d[pk]) document.title=d[pk]+' — Veyndra';
+  const pk=document.body.getAttribute('data-title-key'); if(pk&&d[pk]) document.title=d[pk]+' — Zerolyn';
   const lb=document.querySelector('.lang-btn .flag'), ln=document.querySelector('.lang-btn .nm'); const L=LANGS.find(x=>x.code===code);
   if(lb&&L) lb.innerHTML=L.flag; if(ln&&L) ln.textContent=L.code.toUpperCase();
   document.querySelectorAll('.lang-menu button').forEach(b=>b.classList.toggle('sel',b.dataset.code===code));
@@ -87,7 +87,7 @@ function buildNav(){
   const menu=LANGS.map(l=>'<button data-code="'+l.code+'"><span class="flag">'+l.flag+'</span><span>'+l.name+'</span></button>').join('');
   const h=document.createElement('header'); h.className='nav';
   h.innerHTML='<div class="wrap nav-in">'+
-    '<a class="brand" href="index.html">'+SVG.logo+'<span>Veyndra</span></a>'+
+    '<a class="brand" href="index.html">'+SVG.logo+'<span>Zerolyn</span></a>'+
     '<nav class="nav-links" id="navlinks">'+links+'</nav>'+
     '<div class="nav-right">'+
       '<a class="btn btn-primary" href="send.html" data-i18n="nav_cta" style="padding:10px 18px">nav_cta</a>'+
@@ -111,7 +111,7 @@ function buildFooter(){
     .map(r=>'<a href="'+r[1]+'" data-i18n="'+r[0]+'" '+(r[1].startsWith('http')?'target="_blank" rel="noopener"':'')+'>'+r[0]+'</a>').join('');
   f.innerHTML='<div class="wrap">'+
    '<div class="ft-top">'+
-     '<div><a class="brand" href="index.html">'+SVG.logo+'<span>Veyndra</span></a>'+
+     '<div><a class="brand" href="index.html">'+SVG.logo+'<span>Zerolyn</span></a>'+
        '<p class="ft-desc" data-i18n="ft_desc">ft_desc</p>'+
        '<div class="socials">'+
          '<a class="soc" data-soc="github" href="'+CONFIG.social.github+'" target="_blank" rel="noopener" aria-label="GitHub">'+SVG.github+'</a>'+
