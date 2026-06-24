@@ -1,0 +1,110 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>ShieldPay</title>
+<meta name="description" content="Send a private USDC transfer on Stellar. Amounts hidden by a zero-knowledge proof, recipient address validated, proof verified on-chain.">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 48 48'%3E%3Cdefs%3E%3ClinearGradient id='g' x1='0' y1='0' x2='48' y2='48'%3E%3Cstop stop-color='%237c5cff'/%3E%3Cstop offset='.55' stop-color='%232fb8ff'/%3E%3Cstop offset='1' stop-color='%23ff5fa2'/%3E%3C/linearGradient%3E%3C/defs%3E%3Cpath d='M24 3l16 6v11c0 10-6.8 18.6-16 22-9.2-3.4-16-12-16-22V9z' fill='url(%23g)'/%3E%3C/svg%3E">
+<link rel="stylesheet" href="assets/styles.css">
+</head>
+<body data-title-key="send_title">
+
+<section class="section">
+  <div class="wrap">
+    <span class="eyebrow" data-i18n="hero_badge">hero_badge</span>
+    <h1 class="h-lg" data-i18n="send_h">send_h</h1>
+    <p class="lead" data-i18n="send_lead">send_lead</p>
+
+    <div class="split">
+      <div>
+        <div class="panel">
+          <div class="panel-head">
+            <div class="ds"><span class="dot off" id="wdot"></span><span id="wstate" data-i18n="wallet_not">wallet_not</span></div>
+            <button class="btn btn-soft" id="wbtn" data-i18n="wallet_connect">wallet_connect</button>
+          </div>
+          <div class="panel-body"><span class="pk mono" id="waddr"></span></div>
+        </div>
+
+        <div class="panel">
+          <div class="panel-head"><h3 data-i18n="send_form">send_form</h3><span class="tag" data-i18n="wallet_testnet">wallet_testnet</span></div>
+          <div class="panel-body">
+            <label class="field"><span data-i18n="send_recipient">send_recipient</span>
+              <input class="input mono" id="rcpt" data-i18n-ph="send_recipient_ph" autocomplete="off" spellcheck="false"></label>
+            <div class="hint" id="rhint"></div>
+            <div class="amount-row">
+              <label class="field asset-sel"><span data-i18n="send_asset">send_asset</span>
+                <select class="input" id="asset"></select></label>
+              <label class="field"><span data-i18n="send_amount">send_amount</span>
+                <input class="input" id="amt" type="number" min="0" step="0.01" value="100"></label>
+            </div>
+            <label class="field"><span data-i18n="send_memo">send_memo</span>
+              <input class="input" id="memo" data-i18n-ph="send_memo_ph"></label>
+            <button class="btn btn-primary btn-block btn-lg" id="sendbtn" data-i18n="send_btn">send_btn</button>
+          </div>
+        </div>
+      </div>
+
+      <div>
+        <div class="panel">
+          <div class="panel-head"><h3 data-i18n="send_steps">send_steps</h3></div>
+          <div class="panel-body"><div class="steps" id="pipe"></div></div>
+        </div>
+        <div class="panel" id="receipt" style="display:none">
+          <div class="panel-head"><h3 data-i18n="send_receipt">send_receipt</h3><span class="tag good" data-i18n="wallet_testnet">wallet_testnet</span></div>
+          <div class="panel-body">
+            <div class="kv"><span data-i18n="send_rcpt_from">send_rcpt_from</span><b class="mono" id="r_from"></b></div>
+            <div class="kv"><span data-i18n="send_rcpt_to">send_rcpt_to</span><b class="mono" id="r_to"></b></div>
+            <div class="kv"><span data-i18n="send_rcpt_amount">send_rcpt_amount</span><b id="r_amt"></b></div>
+            <div class="kv"><span data-i18n="send_rcpt_status">send_rcpt_status</span><b class="good" data-i18n="send_rcpt_status_v">send_rcpt_status_v</b></div>
+            <div class="kv"><span data-i18n="send_rcpt_proof">send_rcpt_proof</span><b class="mono" id="r_proof"></b></div>
+            <div class="kv"><span data-i18n="send_rcpt_tx">send_rcpt_tx</span><b class="mono" id="r_tx"></b></div>
+            <div class="kv"><span data-i18n="send_rcpt_time">send_rcpt_time</span><b id="r_time"></b></div>
+            <div class="hero-cta">
+              <button class="btn btn-soft" id="pdfbtn" data-i18n="send_pdf">send_pdf</button>
+              <a class="btn btn-ghost link-ext" id="txview" target="_blank" rel="noopener" data-i18n="send_view">send_view</a>
+              <button class="btn btn-ghost" id="againbtn" data-i18n="send_again">send_again</button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section class="section">
+  <div class="wrap grid g2">
+    <div class="panel">
+      <div class="panel-head"><h3 data-i18n="send_qr_h">send_qr_h</h3></div>
+      <div class="panel-body">
+        <p data-i18n="send_qr_lead">send_qr_lead</p>
+        <button class="btn btn-soft" id="qrbtn" data-i18n="send_qr_btn">send_qr_btn</button>
+        <div class="qr-box" id="qr"></div>
+        <div class="hint" id="qrhint"></div>
+      </div>
+    </div>
+    <div class="panel">
+      <div class="panel-head"><h3 data-i18n="send_disc_h">send_disc_h</h3></div>
+      <div class="panel-body">
+        <p data-i18n="send_disc_lead">send_disc_lead</p>
+        <button class="btn btn-soft" id="discbtn" data-i18n="send_disc_btn">send_disc_btn</button>
+        <div class="codeblock mono" id="vkey" style="display:none"></div>
+        <div class="hero-cta" id="discrow" style="display:none">
+          <button class="btn btn-ghost" id="disccopy" data-i18n="send_disc_copy">send_disc_copy</button>
+        </div>
+        <p class="hint" data-i18n="send_disc_note">send_disc_note</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<script src="assets/i18n.en.js"></script>
+<script src="assets/i18n.es.js"></script>
+<script src="assets/i18n.de.js"></script>
+<script src="assets/i18n.ru.js"></script>
+<script src="assets/i18n.uk.js"></script>
+<script src="https://cdn.jsdelivr.net/gh/davidshimjs/qrcodejs/qrcode.min.js"></script>
+<script src="assets/send.js"></script>
+<script src="assets/app.js"></script>
+</body>
+</html>

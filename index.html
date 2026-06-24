@@ -1,252 +1,121 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="en">
 <head>
-<meta charset="UTF-8" />
-<meta name="viewport" content="width=device-width, initial-scale=1.0" />
-<title>ShieldPay — Compliant Private Payments on Stellar</title>
-<meta name="description" content="ShieldPay: privacy-by-default USDC payments on Stellar with zero-knowledge proofs, view-key selective disclosure, and an ASP allow-list. Built for Stellar Hacks: Real-World ZK." />
-<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Cdefs%3E%3ClinearGradient id='g' x1='0' y1='0' x2='1' y2='1'%3E%3Cstop offset='0' stop-color='%238b5cf6'/%3E%3Cstop offset='.5' stop-color='%2338bdf8'/%3E%3Cstop offset='1' stop-color='%23f472b6'/%3E%3C/linearGradient%3E%3C/defs%3E%3Cpath d='M32 3l24 9v16c0 15-10 28-24 33C18 56 8 43 8 28V12l24-9z' fill='url(%23g)'/%3E%3Cpath d='M27 33l4 4 9-10' stroke='white' stroke-width='4' fill='none' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E" />
-<style>
-:root{--vio:#8b5cf6;--sky:#38bdf8;--pink:#f472b6;--ink:#0f172a;--mut:#64748b;--line:#e8ecf3;--bg:#ffffff;--soft:#f7f9fc;--grad:linear-gradient(135deg,#8b5cf6,#38bdf8 55%,#f472b6);}
-*{box-sizing:border-box;}
-html{scroll-behavior:smooth;}
-body{margin:0;font-family:'Inter',-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Helvetica,Arial,sans-serif;color:var(--ink);background:var(--bg);line-height:1.6;-webkit-font-smoothing:antialiased;}
-a{color:inherit;text-decoration:none;}
-.wrap{max-width:1120px;margin:0 auto;padding:0 22px;}
-.g{background:var(--grad);-webkit-background-clip:text;background-clip:text;color:transparent;}
-header{position:sticky;top:0;z-index:50;background:rgba(255,255,255,.82);backdrop-filter:blur(12px);border-bottom:1px solid var(--line);}
-.nav{display:flex;align-items:center;gap:18px;height:64px;}
-.brand{display:flex;align-items:center;gap:10px;font-weight:800;font-size:18px;}
-.brand svg{width:30px;height:30px;}
-.nav-links{display:flex;gap:20px;margin-left:14px;}
-.nav-link{color:var(--mut);font-weight:600;font-size:14px;transition:color .2s;}
-.nav-link:hover{color:var(--vio);}
-.nav-right{margin-left:auto;display:flex;align-items:center;gap:10px;}
-#langWrap{position:relative;}
-#langBtn{display:flex;align-items:center;gap:7px;border:1px solid var(--line);background:#fff;border-radius:999px;padding:7px 12px;font-weight:700;font-size:13px;cursor:pointer;transition:.2s;}
-#langBtn:hover{border-color:var(--vio);box-shadow:0 4px 14px rgba(139,92,246,.16);transform:translateY(-1px);}
-#langCur .lc{color:var(--ink);}
-#langBtn .caret{color:var(--mut);font-size:10px;}
-#langMenu{position:absolute;right:0;top:46px;background:#fff;border:1px solid var(--line);border-radius:14px;box-shadow:0 18px 44px rgba(15,23,42,.16);padding:6px;min-width:188px;opacity:0;visibility:hidden;transform:translateY(-8px) scale(.97);transition:.22s cubic-bezier(.2,.8,.2,1);transform-origin:top right;}
-#langMenu.open{opacity:1;visibility:visible;transform:translateY(0) scale(1);}
-.lang-item{display:flex;align-items:center;gap:10px;width:100%;border:0;background:transparent;padding:9px 11px;border-radius:10px;font-size:14px;font-weight:600;cursor:pointer;text-align:left;transition:.15s;color:var(--ink);}
-.lang-item:hover{background:var(--soft);}
-.lang-item .fl{font-size:18px;}
-.lang-item[aria-selected="true"]{background:linear-gradient(135deg,rgba(139,92,246,.12),rgba(56,189,248,.12));color:var(--vio);}
-#muteBtn{display:flex;align-items:center;gap:6px;border:1px solid var(--line);background:#fff;border-radius:999px;padding:7px 12px;font-weight:700;font-size:13px;cursor:pointer;transition:.2s;}
-#muteBtn:hover{border-color:var(--sky);box-shadow:0 4px 14px rgba(56,189,248,.18);transform:translateY(-1px);}
-#muteBtn .tx{color:var(--ink);}
-.btn{display:inline-flex;align-items:center;gap:8px;border-radius:999px;padding:13px 22px;font-weight:700;font-size:15px;cursor:pointer;border:1px solid transparent;transition:transform .18s,box-shadow .25s,background .2s;}
-.btn-primary{background:var(--grad);color:#fff;box-shadow:0 10px 28px rgba(139,92,246,.32);}
-.btn-primary:hover{transform:translateY(-2px);box-shadow:0 16px 40px rgba(139,92,246,.42);}
-.btn-ghost{background:#fff;border-color:var(--line);color:var(--ink);}
-.btn-ghost:hover{transform:translateY(-2px);border-color:var(--vio);box-shadow:0 10px 26px rgba(15,23,42,.08);}
-.hero{position:relative;overflow:hidden;padding:84px 0 64px;}
-.hero:before{content:"";position:absolute;width:520px;height:520px;left:-160px;top:-200px;background:radial-gradient(circle,rgba(139,92,246,.20),transparent 65%);}
-.hero:after{content:"";position:absolute;width:520px;height:520px;right:-180px;top:-120px;background:radial-gradient(circle,rgba(56,189,248,.18),transparent 65%);}
-.pill{display:inline-flex;align-items:center;gap:8px;background:var(--soft);border:1px solid var(--line);color:var(--vio);font-weight:700;font-size:13px;border-radius:999px;padding:7px 14px;position:relative;}
-.hero h1{font-size:clamp(34px,6vw,60px);line-height:1.04;font-weight:900;letter-spacing:-1px;margin:20px 0 16px;}
-.hero .sub{font-size:clamp(16px,2.4vw,20px);color:var(--mut);max-width:760px;margin:0 0 28px;}
-.hero-cta{display:flex;flex-wrap:wrap;gap:14px;position:relative;}
-.stats{display:grid;grid-template-columns:repeat(4,1fr);gap:14px;margin-top:42px;position:relative;}
-.stat{background:var(--soft);border:1px solid var(--line);border-radius:16px;padding:16px;font-size:14px;color:var(--mut);}
-.stat b{display:block;font-size:22px;color:var(--ink);}
-section{padding:64px 0;}
-.eyebrow{font-weight:800;letter-spacing:1px;text-transform:uppercase;font-size:12px;color:var(--sky);}
-h2.sec{font-size:clamp(26px,4vw,40px);font-weight:900;letter-spacing:-.5px;margin:10px 0 12px;}
-.lead{color:var(--mut);max-width:760px;font-size:17px;}
-.cards{display:grid;grid-template-columns:repeat(3,1fr);gap:18px;margin-top:34px;}
-.card{border:1px solid var(--line);border-radius:18px;padding:24px;background:#fff;transition:transform .25s,box-shadow .25s;}
-.card:hover{transform:translateY(-4px);box-shadow:0 18px 44px rgba(15,23,42,.09);}
-.card h3{margin:0 0 8px;font-size:18px;}
-.card p{margin:0;color:var(--mut);font-size:15px;}
-.c1{border-top:3px solid var(--vio);}
-.c2{border-top:3px solid var(--sky);}
-.c3{border-top:3px solid var(--pink);}
-.split{display:grid;grid-template-columns:1fr 1fr;gap:22px;margin-top:30px;}
-.panel{border:1px solid var(--line);border-radius:18px;padding:26px;}
-.panel.prob{background:linear-gradient(180deg,#fff7f9,#fff);}
-.panel.sol{background:linear-gradient(180deg,#f5fbff,#fff);}
-.panel h3{margin:0 0 14px;font-size:20px;}
-.panel ul{margin:0;padding-left:20px;color:var(--mut);}
-.panel li{margin-bottom:9px;}
-.flow{display:grid;grid-template-columns:repeat(4,1fr);gap:16px;margin-top:34px;}
-.step{position:relative;border:1px solid var(--line);border-radius:16px;padding:22px;background:#fff;}
-.step .n{width:34px;height:34px;border-radius:10px;display:flex;align-items:center;justify-content:center;font-weight:800;color:#fff;background:var(--grad);margin-bottom:12px;}
-.step h4{margin:0 0 6px;font-size:16px;}
-.step p{margin:0;color:var(--mut);font-size:14px;}
-.demo-card{margin-top:30px;border:1px solid var(--line);border-radius:20px;overflow:hidden;box-shadow:0 18px 50px rgba(15,23,42,.08);}
-.demo-top{display:flex;align-items:center;justify-content:space-between;padding:16px 20px;background:var(--soft);border-bottom:1px solid var(--line);}
-.demo-top .ttl{font-weight:800;}
-.chip{font-size:12px;font-weight:700;color:#16a34a;background:#eafaf0;border:1px solid #c7f0d6;padding:5px 10px;border-radius:999px;}
-.demo-body{display:grid;grid-template-columns:1fr 1fr;gap:0;}
-.demo-form{padding:24px;border-right:1px solid var(--line);}
-.fld{margin-bottom:16px;}
-.fld label{display:block;font-size:13px;font-weight:700;color:var(--mut);margin-bottom:6px;}
-.fld input{width:100%;border:1px solid var(--line);border-radius:11px;padding:12px 14px;font-size:15px;font-family:inherit;}
-.fld input:focus{outline:none;border-color:var(--vio);box-shadow:0 0 0 3px rgba(139,92,246,.16);}
-.console{padding:20px;background:#0f172a;color:#cbd5e1;font-family:'SF Mono',ui-monospace,Menlo,Consolas,monospace;font-size:13px;min-height:210px;}
-.cline{padding:3px 0;animation:fadein .3s ease;}
-@keyframes fadein{from{opacity:0;transform:translateX(-6px);}to{opacity:1;transform:none;}}
-.road{margin-top:36px;display:flex;flex-direction:column;gap:0;}
-.road-item{display:grid;grid-template-columns:160px 1fr;gap:20px;padding:22px 0;border-top:1px solid var(--line);}
-.road-item:first-child{border-top:0;}
-.road-tag{font-weight:800;font-size:14px;color:var(--vio);}
-.road-item h4{margin:0 0 6px;font-size:18px;}
-.road-item p{margin:0;color:var(--mut);font-size:15px;}
-.about{border:1px solid var(--line);border-radius:22px;padding:40px;text-align:center;background:radial-gradient(circle at 50% 0,rgba(139,92,246,.08),transparent 60%);margin-top:20px;}
-.about .badge{display:inline-block;font-weight:800;background:var(--soft);border:1px solid var(--line);border-radius:999px;padding:8px 16px;font-size:14px;}
-.about h3{font-size:clamp(24px,3.5vw,34px);font-weight:900;margin:16px 0 12px;}
-.about .solo{background:var(--grad);-webkit-background-clip:text;background-clip:text;color:transparent;}
-.about p{color:var(--mut);max-width:680px;margin:0 auto;font-size:16px;}
-.socials{display:flex;justify-content:center;gap:16px;margin-top:26px;}
-.social{position:relative;overflow:hidden;width:54px;height:54px;border-radius:14px;display:flex;align-items:center;justify-content:center;border:1px solid var(--line);background:#fff;transition:transform .2s,box-shadow .25s;cursor:pointer;}
-.social svg{width:26px;height:26px;}
-.social:hover{transform:translateY(-3px) scale(1.04);box-shadow:0 14px 30px rgba(15,23,42,.14);}
-.social:active{transform:scale(.94);}
-.social .soon{position:absolute;top:-8px;right:-8px;font-size:8px;font-weight:800;background:var(--grad);color:#fff;padding:3px 6px;border-radius:999px;letter-spacing:.5px;}
-.ripple{position:absolute;border-radius:50%;background:rgba(139,92,246,.35);transform:scale(0);animation:rip .6s ease-out;pointer-events:none;}
-@keyframes rip{to{transform:scale(2.4);opacity:0;}}
-footer{border-top:1px solid var(--line);padding:30px 0;color:var(--mut);font-size:14px;text-align:center;}
-.reveal{opacity:0;transform:translateY(22px);transition:opacity .6s ease,transform .6s ease;}
-.reveal.in{opacity:1;transform:none;}
-@media(max-width:900px){.cards,.flow{grid-template-columns:1fr 1fr;}.stats{grid-template-columns:1fr 1fr;}.demo-body{grid-template-columns:1fr;}.demo-form{border-right:0;border-bottom:1px solid var(--line);}.split{grid-template-columns:1fr;}.road-item{grid-template-columns:1fr;gap:6px;}.nav-links{display:none;}}
-@media(max-width:520px){.cards,.flow,.stats{grid-template-columns:1fr;}}
-</style>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>ShieldPay</title>
+<meta name="description" content="Compliant private payments on Stellar. Privacy by default, provability on demand — powered by zero-knowledge proofs and Soroban.">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 48 48'%3E%3Cdefs%3E%3ClinearGradient id='g' x1='0' y1='0' x2='48' y2='48'%3E%3Cstop stop-color='%237c5cff'/%3E%3Cstop offset='.55' stop-color='%232fb8ff'/%3E%3Cstop offset='1' stop-color='%23ff5fa2'/%3E%3C/linearGradient%3E%3C/defs%3E%3Cpath d='M24 3l16 6v11c0 10-6.8 18.6-16 22-9.2-3.4-16-12-16-22V9z' fill='url(%23g)'/%3E%3C/svg%3E">
+<link rel="stylesheet" href="assets/styles.css">
 </head>
-<body>
-<header>
-<div class="wrap nav">
-  <a class="brand" href="#top">
-    <svg viewBox="0 0 64 64"><defs><linearGradient id="bg" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#8b5cf6"/><stop offset=".5" stop-color="#38bdf8"/><stop offset="1" stop-color="#f472b6"/></linearGradient></defs><path d="M32 3l24 9v16c0 15-10 28-24 33C18 56 8 43 8 28V12l24-9z" fill="url(#bg)"/><path d="M27 33l4 4 9-10" stroke="white" stroke-width="4" fill="none" stroke-linecap="round" stroke-linejoin="round"/></svg>
-    ShieldPay
-  </a>
-  <nav class="nav-links">
-    <a class="nav-link" href="#how" data-i18n="nav_how">How it works</a>
-    <a class="nav-link" href="#demo" data-i18n="nav_demo">Demo</a>
-    <a class="nav-link" href="#roadmap" data-i18n="nav_roadmap">Roadmap</a>
-    <a class="nav-link" href="#about" data-i18n="nav_about">About</a>
-  </nav>
-  <div class="nav-right">
-    <button id="muteBtn" type="button" aria-pressed="false" data-i18n="sound_on">\uD83D\uDD0A <span class="tx">Sound on</span></button>
-    <div id="langWrap">
-      <button id="langBtn" type="button" aria-haspopup="listbox" aria-expanded="false"><span id="langCur">\uD83C\uDDEC\uD83C\uDDE7 <span class="lc">English</span></span><span class="caret">\u25BE</span></button>
-      <div id="langMenu" role="listbox"></div>
-    </div>
-  </div>
-</div>
-</header>
+<body data-title-key="home_title">
 
-<a id="top"></a>
 <section class="hero">
-  <div class="wrap">
-    <span class="pill" data-i18n="hero_pill">Stellar Hacks: Real-World ZK · Protocol 25/26 primitives</span>
-    <h1 data-i18n="hero_h1">Private payments,<br>that <span class="g">still pass compliance</span></h1>
-    <p class="sub" data-i18n="hero_sub">ShieldPay hides amounts and counterparties on Stellar with zero-knowledge proofs — while an authorized auditor can selectively reveal details via a view key, and an ASP allow-list keeps sanctioned addresses out.</p>
+  <div class="blob b1"></div><div class="blob b2"></div><div class="blob b3"></div>
+  <div class="wrap hero-in">
+    <span class="badge" data-i18n="hero_badge">hero_badge</span>
+    <h1 class="h-xl"><span data-i18n="hero_h1a">hero_h1a</span> <span class="grad-text" data-i18n="hero_h1b">hero_h1b</span></h1>
+    <p class="lead" data-i18n="hero_lead">hero_lead</p>
     <div class="hero-cta">
-      <a class="btn btn-primary" href="#demo" data-i18n="hero_btn_demo">\uD83D\uDEE1\uFE0F Try the live demo</a>
-      <a class="btn btn-ghost" href="#how" data-i18n="hero_btn_how">How the ZK works</a>
+      <a class="btn btn-primary btn-lg" href="send.html" data-i18n="hero_cta1">hero_cta1</a>
+      <a class="btn btn-soft btn-lg" href="verify.html" data-i18n="hero_cta2">hero_cta2</a>
     </div>
-    <div class="stats">
-      <div class="stat" data-i18n="stat1"><b>100%</b> on-chain verified</div>
-      <div class="stat" data-i18n="stat2"><b>0</b> secrets leave the device</div>
-      <div class="stat" data-i18n="stat3"><b>Groth16</b> proof on Soroban</div>
-      <div class="stat" data-i18n="stat4"><b>USDC</b> real payment rails</div>
+    <div class="hero-trust">
+      <div class="st"><span class="sn" data-i18n="hero_t1n">hero_t1n</span><span class="sk" data-i18n="hero_t1l">hero_t1l</span></div>
+      <div class="st"><span class="sn" data-i18n="hero_t2n">hero_t2n</span><span class="sk" data-i18n="hero_t2l">hero_t2l</span></div>
+      <div class="st"><span class="sn" data-i18n="hero_t3n">hero_t3n</span><span class="sk" data-i18n="hero_t3l">hero_t3l</span></div>
     </div>
   </div>
 </section>
 
-<section id="how">
+<section class="section reveal">
   <div class="wrap">
-    <div class="reveal">
-      <div class="eyebrow" data-i18n="how_eyebrow">The interesting gap</div>
-      <h2 class="sec" data-i18n="how_h2">ZK that does real work — not a sticker</h2>
-      <p class="lead" data-i18n="how_lead">Stellar shipped the cryptographic primitives. ShieldPay turns them into a finished, real-world payment flow. Remove the proof, and the system literally cannot validate a transfer.</p>
-    </div>
-    <div class="cards">
-      <div class="card c1 reveal"><h3 data-i18n="how_c1_h">1 · Proof in your browser</h3><p data-i18n="how_c1_p">A Circom circuit proves a valid shielded transfer (inputs = outputs, ownership, Merkle membership) client-side via WASM. Secrets never leave your device.</p></div>
-      <div class="card c2 reveal"><h3 data-i18n="how_c2_h">2 · Verified on Stellar</h3><p data-i18n="how_c2_p">A Soroban Groth16 verifier checks the proof on-chain using the BN254 + Poseidon host functions. The amount stays hidden; validity becomes public.</p></div>
-      <div class="card c3 reveal"><h3 data-i18n="how_c3_h">3 · Selective disclosure</h3><p data-i18n="how_c3_p">An auditor holding a view key can reconstruct the amount and counterparty — privacy for the public, accountability for regulators.</p></div>
-    </div>
-    <div class="split">
-      <div class="panel prob reveal"><h3 data-i18n="prob_h">\uD83D\uDE1F The problem</h3><ul><li data-i18n="prob_1">Public ledgers expose every salary and every B2B payment amount.</li><li data-i18n="prob_2">Full anonymity breaks KYC/AML — regulators say no.</li><li data-i18n="prob_3">Institutions can adopt neither extreme, so real money stays off-chain.</li></ul></div>
-      <div class="panel sol reveal"><h3 data-i18n="sol_h">✨ The ShieldPay way</h3><ul><li data-i18n="sol_1">Private by default — amounts &amp; parties shielded with ZK.</li><li data-i18n="sol_2">Compliant by design — view-key disclosure + ASP allow-list.</li><li data-i18n="sol_3">Real rails — USDC stablecoin transfers on Stellar.</li></ul></div>
+    <span class="eyebrow" data-i18n="prob_eyebrow">prob_eyebrow</span>
+    <h2 class="h-lg" data-i18n="prob_h">prob_h</h2>
+    <p class="lead" data-i18n="prob_lead">prob_lead</p>
+    <div class="grid g3">
+      <div class="card"><div class="ic">👁️</div><h3 data-i18n="prob1_t">prob1_t</h3><p data-i18n="prob1_d">prob1_d</p></div>
+      <div class="card"><div class="ic">🚫</div><h3 data-i18n="prob2_t">prob2_t</h3><p data-i18n="prob2_d">prob2_d</p></div>
+      <div class="card"><div class="ic">⚖️</div><h3 data-i18n="prob3_t">prob3_t</h3><p data-i18n="prob3_d">prob3_d</p></div>
     </div>
   </div>
 </section>
 
-<section id="flow" style="background:var(--soft);">
+<section class="section reveal">
   <div class="wrap">
-    <div class="reveal">
-      <div class="eyebrow" data-i18n="flow_eyebrow">End-to-end flow</div>
-      <h2 class="sec" data-i18n="flow_h2">Deposit → shielded transfer → withdraw</h2>
-      <p class="lead" data-i18n="flow_lead">Every step is real: proofs are generated client-side and verified by a Soroban contract on testnet.</p>
-    </div>
-    <div class="flow">
-      <div class="step reveal"><div class="n">1</div><h4 data-i18n="flow_s1_h">Deposit</h4><p data-i18n="flow_s1_p">Deposit USDC into the shielded pool with a Poseidon commitment.</p></div>
-      <div class="step reveal"><div class="n">2</div><h4 data-i18n="flow_s2_h">Prove</h4><p data-i18n="flow_s2_p">Generate a Groth16 proof of a valid transfer in the browser.</p></div>
-      <div class="step reveal"><div class="n">3</div><h4 data-i18n="flow_s3_h">Verify</h4><p data-i18n="flow_s3_p">The Soroban verifier checks the proof; the ASP allow-list is enforced.</p></div>
-      <div class="step reveal"><div class="n">4</div><h4 data-i18n="flow_s4_h">Disclose</h4><p data-i18n="flow_s4_p">The auditor reconstructs the details with the view key when required.</p></div>
+    <span class="eyebrow" data-i18n="feat_eyebrow">feat_eyebrow</span>
+    <h2 class="h-lg" data-i18n="feat_h">feat_h</h2>
+    <p class="lead" data-i18n="feat_lead">feat_lead</p>
+    <div class="grid g3">
+      <div class="card"><div class="ic">🔒</div><h3 data-i18n="f1_t">f1_t</h3><p data-i18n="f1_d">f1_d</p><a class="more" href="send.html"><span data-i18n="feat_more">feat_more</span></a></div>
+      <div class="card"><div class="ic">🆔</div><h3 data-i18n="f2_t">f2_t</h3><p data-i18n="f2_d">f2_d</p><a class="more" href="compliance.html"><span data-i18n="feat_more">feat_more</span></a></div>
+      <div class="card"><div class="ic">🔑</div><h3 data-i18n="f3_t">f3_t</h3><p data-i18n="f3_d">f3_d</p><a class="more" href="compliance.html"><span data-i18n="feat_more">feat_more</span></a></div>
+      <div class="card"><div class="ic">🌊</div><h3 data-i18n="f4_t">f4_t</h3><p data-i18n="f4_d">f4_d</p><a class="more" href="pools.html"><span data-i18n="feat_more">feat_more</span></a></div>
+      <div class="card"><div class="ic">🏦</div><h3 data-i18n="f5_t">f5_t</h3><p data-i18n="f5_d">f5_d</p><a class="more" href="pools.html"><span data-i18n="feat_more">feat_more</span></a></div>
+      <div class="card"><div class="ic">✅</div><h3 data-i18n="f6_t">f6_t</h3><p data-i18n="f6_d">f6_d</p><a class="more" href="verify.html"><span data-i18n="feat_more">feat_more</span></a></div>
     </div>
   </div>
 </section>
 
-<section id="demo">
+<section class="section reveal">
   <div class="wrap">
-    <div class="reveal">
-      <div class="eyebrow" data-i18n="demo_eyebrow">Live demo</div>
-      <h2 class="sec" data-i18n="demo_h2">Send a private USDC transfer</h2>
-      <p class="lead" data-i18n="demo_lead">A simulated shielded transfer flow. In production, the “Send” step posts a real Groth16 proof to the Soroban verifier on Stellar testnet.</p>
-    </div>
-    <div class="demo-card reveal">
-      <div class="demo-top"><span class="ttl" data-i18n="demo_row">Shielded transfer</span><span class="chip" data-i18n="demo_chip">● Wallet connected (testnet)</span></div>
-      <div class="demo-body">
-        <div class="demo-form">
-          <div class="fld"><label data-i18n="demo_addr_l">Recipient address</label><input id="demoAddr" type="text" value="GB3X...K9Q7" /></div>
-          <div class="fld"><label data-i18n="demo_amt_l">Amount (USDC) — hidden on-chain</label><input id="demoAmt" type="text" value="250.00" /></div>
-          <button id="demoSend" class="btn btn-primary" type="button" style="width:100%;justify-content:center;" data-i18n="demo_send">\uD83D\uDD12 Generate proof &amp; send privately</button>
-        </div>
-        <div id="demoOut" class="console"><div class="cline" data-i18n="demo_ready">&gt; Ready. Click send to generate a zero-knowledge proof…</div></div>
-      </div>
+    <span class="eyebrow" data-i18n="how_eyebrow">how_eyebrow</span>
+    <h2 class="h-lg" data-i18n="how_h">how_h</h2>
+    <p class="lead" data-i18n="how_lead">how_lead</p>
+    <div class="steps">
+      <div class="step"><span class="dot">1</span><div><h4 data-i18n="how_s1t">how_s1t</h4><p data-i18n="how_s1d">how_s1d</p></div></div>
+      <div class="step"><span class="dot">2</span><div><h4 data-i18n="how_s2t">how_s2t</h4><p data-i18n="how_s2d">how_s2d</p></div></div>
+      <div class="step"><span class="dot">3</span><div><h4 data-i18n="how_s3t">how_s3t</h4><p data-i18n="how_s3d">how_s3d</p></div></div>
+      <div class="step"><span class="dot">4</span><div><h4 data-i18n="how_s4t">how_s4t</h4><p data-i18n="how_s4d">how_s4d</p></div></div>
     </div>
   </div>
 </section>
 
-<section id="roadmap" style="background:var(--soft);">
+<section class="section reveal">
   <div class="wrap">
-    <div class="reveal">
-      <div class="eyebrow" data-i18n="road_eyebrow">Roadmap 2026 → 2027</div>
-      <h2 class="sec" data-i18n="road_h2">From hackathon win to real product</h2>
-      <p class="lead" data-i18n="road_lead">A clear path from a working testnet demo to a compliant, audited, consumer-ready private payment layer on Stellar.</p>
+    <span class="eyebrow" data-i18n="eco_eyebrow">eco_eyebrow</span>
+    <h2 class="h-lg" data-i18n="eco_h">eco_h</h2>
+    <p class="lead" data-i18n="eco_lead">eco_lead</p>
+    <div class="logos">
+      <div class="logo-card">Stellar</div><div class="logo-card">Soroban</div><div class="logo-card">USDC</div>
+      <div class="logo-card">EURC</div><div class="logo-card">Freighter</div><div class="logo-card">Circle</div>
+      <div class="logo-card">MoneyGram</div><div class="logo-card">Horizon</div>
     </div>
-    <div class="road">
-      <div class="road-item reveal"><div class="road-tag">Q3 2026</div><div><h4 data-i18n="road_1_h">Win &amp; harden</h4><p data-i18n="road_1_p">Publish the hackathon build, open-source the circuits + verifier, add a full test suite, and run the OpenZeppelin Soroban security detectors on every contract.</p></div></div>
-      <div class="road-item reveal"><div class="road-tag">Q4 2026</div><div><h4 data-i18n="road_2_h">Mainnet alpha + audit prep</h4><p data-i18n="road_2_p">Roll out a guarded mainnet alpha with capped amounts, integrate Stellar Wallets Kit for real wallets, and begin a formal circuit + contract audit.</p></div></div>
-      <div class="road-item reveal"><div class="road-tag">Q1 2027</div><div><h4 data-i18n="road_3_h">Compliance SDK</h4><p data-i18n="road_3_p">Release a view-key disclosure SDK and ASP integration so issuers, payroll platforms, and exchanges can plug in selective disclosure out of the box.</p></div></div>
-      <div class="road-item reveal"><div class="road-tag">Q2 2027</div><div><h4 data-i18n="road_4_h">Confidential tokens</h4><p data-i18n="road_4_p">Align with the Confidential Token standard: hidden balances with public addresses for B2B settlement and institutional flows.</p></div></div>
-      <div class="road-item reveal"><div class="road-tag">Q3 2027</div><div><h4 data-i18n="road_5_h">Private remittance corridor</h4><p data-i18n="road_5_p">End-to-end fiat on-ramp → shielded transfer → fiat off-ramp, with compliance proofs at the edges. Stellar’s real rails, made confidential.</p></div></div>
-    </div>
+    <div class="center"><a class="btn btn-soft" href="ecosystem.html" data-i18n="eco_cta">eco_cta</a></div>
   </div>
 </section>
 
-<section id="about">
+<section class="section road reveal">
   <div class="wrap">
-    <div class="about reveal">
-      <span class="badge" data-i18n="about_badge">\uD83C\uDF82 17 years old</span>
-      <h3 data-i18n="about_h3">Built entirely <span class="solo">solo</span></h3>
-      <p data-i18n="about_p">Every line — the Circom circuits, the Soroban verifier, the privacy-pool logic, the view-key disclosure layer, and this entire interface — was designed and built by a single 17-year-old developer, from idea to a working demo on Stellar testnet.</p>
-      <div class="socials">
-        <a class="social" href="#" aria-label="GitHub"><span class="soon">SOON</span><svg viewBox="0 0 24 24"><path fill="#181717" d="M12 .5C5.7.5.5 5.7.5 12c0 5.1 3.3 9.4 7.9 10.9.6.1.8-.2.8-.5v-2c-3.2.7-3.9-1.4-3.9-1.4-.5-1.3-1.3-1.7-1.3-1.7-1.1-.7.1-.7.1-.7 1.2.1 1.8 1.2 1.8 1.2 1 .1.8 1.7 1.2 2.1-1 .5-1.5.5-2 .5z"/></svg></a>
-        <a class="social" href="#" aria-label="X"><span class="soon">SOON</span><svg viewBox="0 0 24 24"><path fill="#000000" d="M18.9 2H22l-7.6 8.7L23.3 22h-6.8l-5.3-7-6.1 7H2l8.1-9.3L1.5 2h7l4.8 6.4L18.9 2zm-2.4 18h1.9L7.6 4H5.6l10.9 16z"/></svg></a>
-        <a class="social" href="#" aria-label="Instagram"><span class="soon">SOON</span><svg viewBox="0 0 24 24"><defs><radialGradient id="ig" cx="30%" cy="107%" r="150%"><stop offset="0" stop-color="#fdf497"/><stop offset=".05" stop-color="#fdf497"/><stop offset=".45" stop-color="#fd5949"/><stop offset=".6" stop-color="#d6249f"/><stop offset=".9" stop-color="#285AEB"/></radialGradient></defs><rect x="2" y="2" width="20" height="20" rx="6" fill="url(#ig)"/><circle cx="12" cy="12" r="4.2" fill="none" stroke="#fff" stroke-width="2"/><circle cx="17.2" cy="6.8" r="1.3" fill="#fff"/></svg></a>
-      </div>
+    <span class="eyebrow" data-i18n="road_eyebrow">road_eyebrow</span>
+    <h2 class="h-lg" data-i18n="road_h">road_h</h2>
+    <p class="lead" data-i18n="road_lead">road_lead</p>
+    <div class="steps">
+      <div class="step"><span class="chip" data-i18n="road_q1">road_q1</span><div><h4 data-i18n="road_q1t">road_q1t</h4><p data-i18n="road_q1d">road_q1d</p></div></div>
+      <div class="step"><span class="chip" data-i18n="road_q2">road_q2</span><div><h4 data-i18n="road_q2t">road_q2t</h4><p data-i18n="road_q2d">road_q2d</p></div></div>
+      <div class="step"><span class="chip" data-i18n="road_q3">road_q3</span><div><h4 data-i18n="road_q3t">road_q3t</h4><p data-i18n="road_q3d">road_q3d</p></div></div>
+      <div class="step"><span class="chip" data-i18n="road_q4">road_q4</span><div><h4 data-i18n="road_q4t">road_q4t</h4><p data-i18n="road_q4d">road_q4d</p></div></div>
+      <div class="step"><span class="chip" data-i18n="road_q5">road_q5</span><div><h4 data-i18n="road_q5t">road_q5t</h4><p data-i18n="road_q5d">road_q5d</p></div></div>
     </div>
   </div>
 </section>
 
-<footer>
-  <div class="wrap"><span data-i18n="footer">ShieldPay · Compliant private payments on Stellar · Submitted to Stellar Hacks: Real-World ZK 2026 · Built solo \uD83D\uDEE1\uFE0F</span></div>
-</footer>
+<section class="section about reveal">
+  <div class="wrap">
+    <span class="eyebrow" data-i18n="about_eyebrow">about_eyebrow</span>
+    <h2 class="h-lg" data-i18n="about_h">about_h</h2>
+    <p class="lead" data-i18n="about_p1">about_p1</p>
+    <p class="lead" data-i18n="about_p2">about_p2</p>
+  </div>
+</section>
+
+<section class="cta-band reveal">
+  <div class="wrap">
+    <h2 class="h-lg" data-i18n="cta_h">cta_h</h2>
+    <p class="lead" data-i18n="cta_p">cta_p</p>
+    <a class="btn btn-primary btn-lg" href="send.html" data-i18n="cta_btn">cta_btn</a>
+  </div>
+</section>
 
 <script src="assets/i18n.en.js"></script>
 <script src="assets/i18n.es.js"></script>
