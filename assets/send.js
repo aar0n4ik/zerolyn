@@ -1,4 +1,4 @@
-/* Zerolyn — send page: REAL Stellar Testnet payments (Freighter + Albedo sign + Horizon submit) */
+/* Zerolyn — send page: REAL Stellar Testnet payments (single wallet: Freighter via official @stellar/freighter-api) */
 (function(){
 'use strict';
 var t=window.SP_t, V=window.SP_validate, QR=window.SP_QR,
@@ -21,16 +21,15 @@ function tt(k,f){ var v=t(k); return (v&&v!==k)?v:f; }
     send_done:'Payment confirmed on Stellar Testnet',send_fail:'Payment failed',
     send_rcpt_status_v:'Confirmed on Stellar Testnet',send_rcpt_proof:'Memo',
     send_need_wallet:'Connect a wallet first.',send_need_valid:'Enter a valid recipient address.',send_need_amount:'Enter an amount greater than zero.',
-    wallet_no_freighter:'Freighter not found. Install it from freighter.app.',wallet_wrong_net:'Switch Freighter to Stellar Testnet.',wallet_rejected:'Connection cancelled.',
+    wallet_no_freighter:'Freighter not detected. See the hint below to connect.',wallet_wrong_net:'Switch Freighter to Stellar Testnet.',wallet_rejected:'Connection cancelled.',
+    wallet_help:'Need Freighter? On desktop, install the extension at <a href="https://www.freighter.app/" target="_blank" rel="noopener">freighter.app</a>, unlock it, then press Connect again. On phone, open this page inside the Freighter app\u2019s built-in browser.',
     send_no_balance:'Not enough {a} balance for this amount.',send_sender_no_trust:'You have no {a} trustline yet.',
     send_dest_missing:'Recipient account is not funded on Testnet.',send_dest_no_trust:'Recipient has no {a} trustline.',
     send_signed_rejected:'Signature was declined in your wallet.',bal_label:'Balance',
     send_disc_lead:'Per-transaction view keys for auditors ship with the shielded pool. A public Testnet payment is transparent by design.',
     send_disc_btn:'How disclosure will work',send_disc_note:'Roadmap: selective disclosure applies to shielded transfers, not public payments.',
     sdk_missing:'Payment library failed to load. Refresh the page.',
-    wallet_connect:'Connect wallet',wallet_choose:'Connect a wallet',
-    wallet_freighter:'Freighter — browser extension (PC)',wallet_albedo:'Albedo — web wallet (works on phone)',
-    wallet_install_freighter:'Install Freighter (PC)',wallet_albedo_missing:'Could not open Albedo. Check your connection and pop-up settings.',
+    wallet_connect:'Connect wallet',
     addr_bad_len:'A Stellar address is 56 characters — you entered {n}. Re-copy the full address.',
     addr_bad_checksum:'Address checksum failed — re-copy the full address.',
     addr_bad_charset:'Invalid characters — a Stellar address uses only A–Z and 2–7.',
@@ -47,16 +46,15 @@ function tt(k,f){ var v=t(k); return (v&&v!==k)?v:f; }
     send_done:'Pago confirmado en la Testnet de Stellar',send_fail:'El pago falló',
     send_rcpt_status_v:'Confirmado en la Testnet de Stellar',send_rcpt_proof:'Memo',
     send_need_wallet:'Conecta una billetera primero.',send_need_valid:'Introduce una dirección de destinatario válida.',send_need_amount:'Introduce un importe mayor que cero.',
-    wallet_no_freighter:'Freighter no encontrado. Instálalo desde freighter.app.',wallet_wrong_net:'Cambia Freighter a la Testnet de Stellar.',wallet_rejected:'Conexión cancelada.',
+    wallet_no_freighter:'Freighter no detectado. Mira la ayuda de abajo para conectar.',wallet_wrong_net:'Cambia Freighter a la Testnet de Stellar.',wallet_rejected:'Conexión cancelada.',
+    wallet_help:'¿Necesitas Freighter? En el ordenador instala la extensión en <a href="https://www.freighter.app/" target="_blank" rel="noopener">freighter.app</a>, desbloquéala y pulsa Conectar de nuevo. En el móvil, abre esta página en el navegador integrado de la app Freighter.',
     send_no_balance:'Saldo de {a} insuficiente para este importe.',send_sender_no_trust:'Aún no tienes línea de confianza de {a}.',
     send_dest_missing:'La cuenta del destinatario no está financiada en la Testnet.',send_dest_no_trust:'El destinatario no tiene línea de confianza de {a}.',
     send_signed_rejected:'La firma fue rechazada en tu billetera.',bal_label:'Saldo',
     send_disc_lead:'Las claves de visualización por transacción para auditores llegan con el pool privado. Un pago público en Testnet es transparente por diseño.',
     send_disc_btn:'Cómo funcionará la divulgación',send_disc_note:'Hoja de ruta: la divulgación selectiva aplica a transferencias privadas, no a pagos públicos.',
     sdk_missing:'La librería de pagos no se cargó. Recarga la página.',
-    wallet_connect:'Conectar billetera',wallet_choose:'Conecta una billetera',
-    wallet_freighter:'Freighter — extensión de navegador (PC)',wallet_albedo:'Albedo — billetera web (funciona en el móvil)',
-    wallet_install_freighter:'Instalar Freighter (PC)',wallet_albedo_missing:'No se pudo abrir Albedo. Revisa tu conexión y los pop-ups.',
+    wallet_connect:'Conectar billetera',
     addr_bad_len:'Una dirección Stellar tiene 56 caracteres — escribiste {n}. Vuelve a copiar la dirección completa.',
     addr_bad_checksum:'Suma de verificación fallida — vuelve a copiar la dirección completa.',
     addr_bad_charset:'Caracteres no válidos — una dirección Stellar solo usa A–Z y 2–7.',
@@ -73,16 +71,15 @@ function tt(k,f){ var v=t(k); return (v&&v!==k)?v:f; }
     send_done:'Zahlung im Stellar-Testnet bestätigt',send_fail:'Zahlung fehlgeschlagen',
     send_rcpt_status_v:'Bestätigt im Stellar-Testnet',send_rcpt_proof:'Memo',
     send_need_wallet:'Verbinde zuerst eine Wallet.',send_need_valid:'Gib eine gültige Empfängeradresse ein.',send_need_amount:'Gib einen Betrag größer als null ein.',
-    wallet_no_freighter:'Freighter nicht gefunden. Installiere es von freighter.app.',wallet_wrong_net:'Stelle Freighter auf das Stellar-Testnet um.',wallet_rejected:'Verbindung abgebrochen.',
+    wallet_no_freighter:'Freighter nicht erkannt. Siehe Hinweis unten zum Verbinden.',wallet_wrong_net:'Stelle Freighter auf das Stellar-Testnet um.',wallet_rejected:'Verbindung abgebrochen.',
+    wallet_help:'Freighter nötig? Am Desktop die Erweiterung unter <a href="https://www.freighter.app/" target="_blank" rel="noopener">freighter.app</a> installieren, entsperren und erneut auf Verbinden klicken. Am Handy diese Seite im integrierten Browser der Freighter-App öffnen.',
     send_no_balance:'Nicht genug {a}-Guthaben für diesen Betrag.',send_sender_no_trust:'Du hast noch keine {a}-Trustline.',
     send_dest_missing:'Empfängerkonto ist im Testnet nicht finanziert.',send_dest_no_trust:'Empfänger hat keine {a}-Trustline.',
     send_signed_rejected:'Signatur in der Wallet abgelehnt.',bal_label:'Guthaben',
     send_disc_lead:'Transaktionsbezogene View-Keys für Prüfer kommen mit dem Shielded Pool. Eine öffentliche Testnet-Zahlung ist absichtlich transparent.',
     send_disc_btn:'So funktioniert die Offenlegung',send_disc_note:'Roadmap: selektive Offenlegung gilt für Shielded-Transfers, nicht für öffentliche Zahlungen.',
     sdk_missing:'Zahlungsbibliothek nicht geladen. Seite neu laden.',
-    wallet_connect:'Wallet verbinden',wallet_choose:'Wallet verbinden',
-    wallet_freighter:'Freighter — Browser-Erweiterung (PC)',wallet_albedo:'Albedo — Web-Wallet (funktioniert am Handy)',
-    wallet_install_freighter:'Freighter installieren (PC)',wallet_albedo_missing:'Albedo konnte nicht geöffnet werden. Prüfe Verbindung und Pop-ups.',
+    wallet_connect:'Wallet verbinden',
     addr_bad_len:'Eine Stellar-Adresse hat 56 Zeichen — du hast {n} eingegeben. Kopiere die vollständige Adresse erneut.',
     addr_bad_checksum:'Prüfsumme fehlgeschlagen — kopiere die vollständige Adresse erneut.',
     addr_bad_charset:'Ungültige Zeichen — eine Stellar-Adresse nutzt nur A–Z und 2–7.',
@@ -99,16 +96,15 @@ function tt(k,f){ var v=t(k); return (v&&v!==k)?v:f; }
     send_done:'Платёж подтверждён в Stellar Testnet',send_fail:'Платёж не прошёл',
     send_rcpt_status_v:'Подтверждено в Stellar Testnet',send_rcpt_proof:'Мемо',
     send_need_wallet:'Сначала подключите кошелёк.',send_need_valid:'Введите корректный адрес получателя.',send_need_amount:'Введите сумму больше нуля.',
-    wallet_no_freighter:'Freighter не найден. Установите его на freighter.app.',wallet_wrong_net:'Переключите Freighter на Stellar Testnet.',wallet_rejected:'Подключение отменено.',
+    wallet_no_freighter:'Freighter не обнаружен. Подсказка ниже поможет подключить.',wallet_wrong_net:'Переключите Freighter на Stellar Testnet.',wallet_rejected:'Подключение отменено.',
+    wallet_help:'Нужен Freighter? На компьютере установите расширение на <a href="https://www.freighter.app/" target="_blank" rel="noopener">freighter.app</a>, разблокируйте его и нажмите «Подключить» снова. На телефоне откройте эту страницу во встроенном браузере приложения Freighter.',
     send_no_balance:'Недостаточно баланса {a} для этой суммы.',send_sender_no_trust:'У вас ещё нет trustline для {a}.',
     send_dest_missing:'Аккаунт получателя не профинансирован в Testnet.',send_dest_no_trust:'У получателя нет trustline для {a}.',
     send_signed_rejected:'Подпись отклонена в кошельке.',bal_label:'Баланс',
     send_disc_lead:'Ключи просмотра по транзакциям для аудиторов появятся вместе с приватным пулом. Публичный платёж в Testnet прозрачен по своей природе.',
     send_disc_btn:'Как будет работать раскрытие',send_disc_note:'В планах: выборочное раскрытие касается приватных переводов, а не публичных платежей.',
     sdk_missing:'Библиотека платежей не загрузилась. Обновите страницу.',
-    wallet_connect:'Подключить кошелёк',wallet_choose:'Подключите кошелёк',
-    wallet_freighter:'Freighter — расширение браузера (ПК)',wallet_albedo:'Albedo — веб-кошелёк (работает с телефона)',
-    wallet_install_freighter:'Установить Freighter (ПК)',wallet_albedo_missing:'Не удалось открыть Albedo. Проверьте соединение и блокировку всплывающих окон.',
+    wallet_connect:'Подключить кошелёк',
     addr_bad_len:'Адрес Stellar состоит из 56 символов — вы ввели {n}. Скопируйте адрес целиком.',
     addr_bad_checksum:'Контрольная сумма не сошлась — скопируйте полный адрес заново.',
     addr_bad_charset:'Недопустимые символы — в адресе Stellar только A–Z и 2–7.',
@@ -125,16 +121,15 @@ function tt(k,f){ var v=t(k); return (v&&v!==k)?v:f; }
     send_done:'Платіж підтверджено у Stellar Testnet',send_fail:'Платіж не пройшов',
     send_rcpt_status_v:'Підтверджено у Stellar Testnet',send_rcpt_proof:'Мемо',
     send_need_wallet:'Спочатку підключіть гаманець.',send_need_valid:'Введіть коректну адресу отримувача.',send_need_amount:'Введіть суму більше нуля.',
-    wallet_no_freighter:'Freighter не знайдено. Встановіть його на freighter.app.',wallet_wrong_net:'Перемкніть Freighter на Stellar Testnet.',wallet_rejected:'Підключення скасовано.',
+    wallet_no_freighter:'Freighter не знайдено. Підказка нижче допоможе підключити.',wallet_wrong_net:'Перемкніть Freighter на Stellar Testnet.',wallet_rejected:'Підключення скасовано.',
+    wallet_help:'Потрібен Freighter? На компʼютері встановіть розширення на <a href="https://www.freighter.app/" target="_blank" rel="noopener">freighter.app</a>, розблокуйте його і натисніть «Підключити» ще раз. На телефоні відкрийте цю сторінку у вбудованому браузері застосунку Freighter.',
     send_no_balance:'Недостатньо балансу {a} для цієї суми.',send_sender_no_trust:'У вас ще немає trustline для {a}.',
     send_dest_missing:'Акаунт отримувача не профінансовано в Testnet.',send_dest_no_trust:'У отримувача немає trustline для {a}.',
     send_signed_rejected:'Підпис відхилено у гаманці.',bal_label:'Баланс',
     send_disc_lead:'Ключі перегляду за транзакцією для аудиторів зʼявляться разом із приватним пулом. Публічний платіж у Testnet прозорий за своєю природою.',
     send_disc_btn:'Як працюватиме розкриття',send_disc_note:'У планах: вибіркове розкриття стосується приватних переказів, а не публічних платежів.',
     sdk_missing:'Бібліотека платежів не завантажилась. Оновіть сторінку.',
-    wallet_connect:'Підключити гаманець',wallet_choose:'Підключіть гаманець',
-    wallet_freighter:'Freighter — розширення браузера (ПК)',wallet_albedo:'Albedo — веб-гаманець (працює з телефона)',
-    wallet_install_freighter:'Встановити Freighter (ПК)',wallet_albedo_missing:'Не вдалося відкрити Albedo. Перевірте зʼєднання та блокування спливних вікон.',
+    wallet_connect:'Підключити гаманець',
     addr_bad_len:'Адреса Stellar складається з 56 символів — ви ввели {n}. Скопіюйте адресу повністю.',
     addr_bad_checksum:'Контрольна сума не зійшлась — скопіюйте повну адресу ще раз.',
     addr_bad_charset:'Неприпустимі символи — в адресі Stellar лише A–Z та 2–7.',
@@ -171,70 +166,49 @@ function rcptReason(a){
 }
 function memoText(str){ if(!str) return null; function blen(x){ return unescape(encodeURIComponent(x)).length; } if(blen(str)<=28) return str; var out=''; for(var i=0;i<str.length;i++){ if(blen(out+str[i])>28) break; out+=str[i]; } return out||null; }
 
-/* ---------- Wallets: Freighter (PC extension) + Albedo (web, mobile-friendly) ---------- */
-function FA(){ return window.freighterApi||window.freighter||null; }
-function ensureAlbedo(){ return new Promise(function(res){ if(window.albedo){ res(true); return; } var sc=document.createElement('script'); sc.src='https://albedo.link/albedo-intent.js'; sc.async=true; sc.onload=function(){ res(!!window.albedo); }; sc.onerror=function(){ res(false); }; document.head.appendChild(sc); }); }
-var Wallet={ address:null, provider:null };
-Wallet.connectFreighter=async function(){
-  var api=FA();
-  if(!api){ toast(t('wallet_no_freighter'),'err'); S.error(); window.open('https://www.freighter.app/','_blank','noopener'); return; }
+/* ---------- Wallet: Freighter only (desktop extension + Freighter mobile in-app browser) ---------- */
+/* Requires the official @stellar/freighter-api script, which exposes window.freighterApi and bridges to the extension. */
+function FA(){ return window.freighterApi || (window.freighter && window.freighter.api) || null; }
+function waitForFreighter(ms){
+  return new Promise(function(res){
+    if(FA()){ res(FA()); return; }
+    var waited=0; var iv=setInterval(function(){
+      if(FA()){ clearInterval(iv); res(FA()); return; }
+      waited+=120; if(waited>=ms){ clearInterval(iv); res(FA()); }
+    },120);
+  });
+}
+function showWalletHelp(){ var ad=$('waddr'); if(!ad||!ad.parentNode) return; var h=$('whelp'); if(!h){ h=document.createElement('div'); h.id='whelp'; h.className='hint'; ad.parentNode.appendChild(h); } h.innerHTML=t('wallet_help'); }
+function hideWalletHelp(){ var h=$('whelp'); if(h){ h.innerHTML=''; } }
+var Wallet={ address:null, provider:'freighter' };
+Wallet.connect=async function(){
+  var api=await waitForFreighter(2500);
+  if(!api){ toast(t('wallet_no_freighter'),'err'); S.error(); showWalletHelp(); return; }
+  var present=true;
+  try{ if(api.isConnected){ var c=await api.isConnected(); present=(c&&typeof c==='object')?(c.isConnected!==false):!!c; } }catch(_){ present=true; }
+  if(!present){ toast(t('wallet_no_freighter'),'err'); S.error(); showWalletHelp(); return; }
   try{
     var addr=null,r;
-    if(api.requestAccess){ r=await api.requestAccess(); if(r&&r.error) throw mkErr(t('wallet_rejected')); addr=(r&&r.address)||(typeof r==='string'?r:null); }
+    if(api.requestAccess){ r=await api.requestAccess(); if(r&&r.error) throw mkErr((r.error&&(r.error.message||r.error))||t('wallet_rejected')); addr=(r&&r.address)||(typeof r==='string'?r:null); }
     if(!addr&&api.getAddress){ r=await api.getAddress(); if(r&&r.error) throw mkErr(t('wallet_rejected')); addr=(r&&r.address)||(typeof r==='string'?r:null); }
     if(!addr&&api.getPublicKey){ addr=await api.getPublicKey(); }
     if(!addr) throw mkErr(t('wallet_rejected'));
-    var net=null; try{ if(api.getNetwork){ var nn=await api.getNetwork(); net=(nn&&nn.network)||nn; } else if(api.getNetworkDetails){ var nd=await api.getNetworkDetails(); net=nd&&nd.network; } }catch(e){}
+    var net=null; try{ if(api.getNetworkDetails){ var nd=await api.getNetworkDetails(); net=(nd&&(nd.network||nd.networkPassphrase))||null; } else if(api.getNetwork){ var nn=await api.getNetwork(); net=(nn&&nn.network)||nn; } }catch(_){}
     if(net&&String(net).toUpperCase().indexOf('TEST')<0){ toast(t('wallet_wrong_net'),'err'); S.error(); return; }
-    Wallet.address=addr; Wallet.provider='freighter'; S.success();
+    Wallet.address=addr; Wallet.provider='freighter'; hideWalletHelp(); S.success();
   }catch(e){ toast((e&&e._uimsg)||t('wallet_rejected'),'err'); S.error(); }
 };
-Wallet.connectAlbedo=async function(){
-  var ok=await ensureAlbedo();
-  if(!ok||!window.albedo){ toast(t('wallet_albedo_missing'),'err'); S.error(); return; }
-  try{
-    var r=await window.albedo.publicKey({ token:String(Date.now()) });
-    var pk=r&&r.pubkey;
-    if(!pk) throw mkErr(t('wallet_rejected'));
-    Wallet.address=pk; Wallet.provider='albedo'; S.success();
-  }catch(e){ toast((e&&e._uimsg)||t('wallet_rejected'),'err'); S.error(); }
-};
-Wallet.disconnect=function(){ Wallet.address=null; Wallet.provider=null; };
+Wallet.disconnect=function(){ Wallet.address=null; };
 Wallet.sign=async function(xdr){
-  if(Wallet.provider==='albedo'){
-    var ok=await ensureAlbedo(); if(!ok||!window.albedo) throw mkErr(t('wallet_albedo_missing'));
-    var ar=await window.albedo.tx({ xdr:xdr, network:'testnet', pubkey:Wallet.address, submit:false });
-    var sx=ar&&(ar.signed_envelope_xdr||ar.xdr);
-    if(!sx) throw mkErr(t('send_signed_rejected'));
-    return sx;
-  }
   var api=FA(); if(!api) throw mkErr(t('wallet_no_freighter'));
   var opts={networkPassphrase:PASS(),network:'TESTNET',address:Wallet.address,accountToSign:Wallet.address};
   var r=await api.signTransaction(xdr,opts);
   if(typeof r==='string') return r;
-  if(r&&r.error) throw mkErr(t('send_signed_rejected'));
+  if(r&&r.error) throw mkErr((r.error&&(r.error.message||r.error))||t('send_signed_rejected'));
   if(r&&r.signedTxXdr) return r.signedTxXdr;
   if(r&&r.signedXDR) return r.signedXDR;
   throw mkErr(t('send_signed_rejected'));
 };
-
-/* ---------- wallet chooser modal ---------- */
-function closeWalletMenu(){ var m=$('wltmodal'); if(m&&m.parentNode) m.parentNode.removeChild(m); }
-function openWalletMenu(){
-  closeWalletMenu();
-  var hasFr=!!FA();
-  var m=document.createElement('div'); m.id='wltmodal';
-  m.style.cssText='position:fixed;inset:0;z-index:9999;display:flex;align-items:center;justify-content:center;background:rgba(6,10,24,.66);backdrop-filter:blur(3px);padding:18px';
-  var card=document.createElement('div');
-  card.style.cssText='width:min(94vw,360px);background:#0e1530;border:1px solid rgba(120,150,255,.25);border-radius:16px;padding:18px;box-shadow:0 20px 60px rgba(0,0,0,.5)';
-  var html='<div style="font-weight:700;font-size:16px;margin:2px 0 14px;color:#eaf0ff">'+t('wallet_choose')+'</div>';
-  html+='<button class="btn btn-soft btn-block" data-w="freighter" style="margin-bottom:10px">'+(hasFr?t('wallet_freighter'):t('wallet_install_freighter'))+'</button>';
-  html+='<button class="btn btn-soft btn-block" data-w="albedo" style="margin-bottom:10px">'+t('wallet_albedo')+'</button>';
-  html+='<button class="btn btn-ghost btn-block" data-w="cancel">✕</button>';
-  card.innerHTML=html; m.appendChild(card); document.body.appendChild(m);
-  m.addEventListener('click',function(e){ if(e.target===m) closeWalletMenu(); });
-  card.querySelectorAll('button').forEach(function(b){ b.addEventListener('click',function(){ var w=b.getAttribute('data-w'); if(w==='cancel'){ closeWalletMenu(); return; } if(w==='freighter'){ if(!FA()){ window.open('https://www.freighter.app/','_blank','noopener'); toast(t('wallet_no_freighter'),'info'); closeWalletMenu(); return; } closeWalletMenu(); Wallet.connectFreighter().then(renderWallet); } else if(w==='albedo'){ closeWalletMenu(); Wallet.connectAlbedo().then(renderWallet); } }); });
-}
 
 /* ---------- pipeline UI ---------- */
 var STEPS=[['stepv_w','stepv_wd'],['stepv_p','stepv_pd'],['stepv_c','stepv_cd'],['stepv_s','stepv_sd']];
@@ -317,7 +291,7 @@ function fillReceipt(r){
 function reset(){ if($('receipt')) $('receipt').style.display='none'; resetPipe(); var q=$('qr'); if(q) q.innerHTML=''; var qh=$('qrhint'); if(qh) qh.textContent=''; }
 
 /* ---------- wallet render + balances ---------- */
-function renderWallet(){ var dot=$('wdot'), st=$('wstate'), ad=$('waddr'), btn=$('wbtn'); var on=!!Wallet.address; var sh=shorten||function(x){return x;}; if(dot) dot.className='dot '+(on?'on':'off'); if(st) st.textContent= on? sh(Wallet.address) : tt('wallet_not','Not connected'); if(ad) ad.textContent= on? Wallet.address : ''; if(btn) btn.textContent= on? tt('wallet_disconnect','Disconnect') : tt('wallet_connect','Connect wallet'); if(on){ fetchBalances(); } else { var wb=$('wbal'); if(wb) wb.textContent=''; } }
+function renderWallet(){ var dot=$('wdot'), st=$('wstate'), ad=$('waddr'), btn=$('wbtn'); var on=!!Wallet.address; var sh=shorten||function(x){return x;}; if(dot) dot.className='dot '+(on?'on':'off'); if(st) st.textContent= on? sh(Wallet.address) : tt('wallet_not','Not connected'); if(ad) ad.textContent= on? Wallet.address : ''; if(btn) btn.textContent= on? tt('wallet_disconnect','Disconnect') : tt('wallet_connect','Connect wallet'); if(on){ hideWalletHelp(); fetchBalances(); } else { var wb=$('wbal'); if(wb) wb.textContent=''; } }
 async function fetchBalances(){ if(!Wallet.address||!sdk()) return; var code=($('asset')&&$('asset').value)||'XLM'; var def=findAsset(code); try{ var acct=await server().loadAccount(Wallet.address); var bal=balOf(acct.balances,def); var wb=$('wbal'); if(!wb){ wb=document.createElement('div'); wb.id='wbal'; wb.className='hint'; var ad=$('waddr'); if(ad&&ad.parentNode) ad.parentNode.appendChild(wb); else return; } wb.textContent=tt('bal_label','Balance')+': '+(bal!=null?trimAmount(bal)+' '+def.code:'0 '+def.code); }catch(e){ var w2=$('wbal'); if(w2) w2.textContent=''; } }
 
 /* ---------- SEP-7 QR ---------- */
@@ -356,7 +330,7 @@ var inited=false;
 function init(){
   var sel=$('asset'); if(sel){ sel.innerHTML=''; ASSETS.forEach(function(a){ var o=document.createElement('option'); o.value=a.code; o.textContent=a.code+(a.issuer?'':' (native)'); sel.appendChild(o); }); }
   buildPipe(); renderWallet();
-  var wb=$('wbtn'); if(wb) wb.addEventListener('click',function(){ if(Wallet.address){ Wallet.disconnect(); renderWallet(); } else { openWalletMenu(); } });
+  var wb=$('wbtn'); if(wb) wb.addEventListener('click',function(){ if(Wallet.address){ Wallet.disconnect(); renderWallet(); } else { Wallet.connect().then(renderWallet); } });
   var sb=$('sendbtn'); if(sb) sb.addEventListener('click',doSend);
   var qb=$('qrbtn'); if(qb) qb.addEventListener('click',doQR);
   var db=$('discbtn'); if(db) db.addEventListener('click',doDisc);
