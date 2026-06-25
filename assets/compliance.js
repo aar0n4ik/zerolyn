@@ -1,4 +1,4 @@
-/* Veyndra — compliance page (zkKYC proof animation) */
+/* Zerolyn — compliance page (zkKYC proof animation; in-browser demo) */
 (function(){
 'use strict';
 var t=window.SP_t, S=window.SP_Sound, toast=window.SP_toast, sleep=window.SP_sleep, ZK=window.SP_ZK;

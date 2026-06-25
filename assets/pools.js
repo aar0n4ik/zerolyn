@@ -1,4 +1,4 @@
-/* Veyndra — pools page (proof-of-innocence + proof of reserves) */
+/* Zerolyn — pools page (proof-of-innocence + proof of reserves; in-browser demo) */
 (function(){
 'use strict';
 var t=window.SP_t, S=window.SP_Sound, toast=window.SP_toast, sleep=window.SP_sleep, ZK=window.SP_ZK;
