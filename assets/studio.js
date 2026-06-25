@@ -1,7 +1,7 @@
-/* Zerolyn \u2014 ZK Proof Studio (verify page).
+/* Zerolyn — ZK Proof Studio (verify page).
    Interactive statement composer on top of the REAL prover/verifier in verify.js.
    - Sliders pick a hidden amount, a hidden balance and a PUBLIC compliance limit.
-   - The three circuit constraints (amount>=1, amount<=balance, amount<=limit \u2014 exactly
+   - The three circuit constraints (amount>=1, amount<=balance, amount<=limit — exactly
      circuits/transfer.circom) are evaluated live; an unsatisfiable statement disables
      proving, because no honest Groth16 proof can exist for it (soundness, made visible).
    - "Generate proof & verify on-chain" runs the SAME snarkjs.groth16.fullProve over the
@@ -14,14 +14,116 @@ var CFG=window.SP_CONFIG||{};
 var G2ORDER=CFG.g2Order||'c1c0';
 var t=window.SP_t||function(k){return k;};
 var $=function(id){return document.getElementById(id);};
-var MAX=1000000;
 var running=false;
 var A,B,L;
 
-/* ---- i18n (runs after app.js, augments the dictionaries) ---- */
+/* ---- i18n (augments app.js dictionaries; en used as fallback for es/de/uk) ---- */
 (function(){ if(!window.I18N) return; function M(l,o){ window.I18N[l]=Object.assign(window.I18N[l]||{},o); }
-  M('en',{st_eyebrow:'ZK Proof Studio',st_compose_h:'Compose the statement',st_priv_note:'Private inputs never leave your browser \u2014 only the proof and the public limit are revealed.',st_amount:'Amount',st_balance:'Balance',st_limit:'Compliance limit',st_private:'private',st_public:'public',st_c_pos:'positivity',st_c_solv:'solvency',st_c_comp:'compliance',st_ok:'\u2713 Statement is satisfiable \u2014 a valid zero-knowledge proof can be generated.',st_bad:'\u2717 Statement violates a constraint \u2014 no honest proof can exist for it.',st_run:'Generate proof & verify on-chain',st_run_busy:'Proving in your browser\u2026',st_vis_h:'Groth16 proof',st_vis_empty:'Move the sliders to build a statement, then generate a real proof to see its group elements and on-chain calldata here.',st_proving:'Generating witness and Groth16 proof\u2026',st_pub_h:'Public signal',st_calldata_h:'On-chain calldata',st_copy:'Copy',st_copied:'Copied',st_time:'Proving time',st_onchain_h:'On-chain verification',st_onchain_lead:'The proof above is verified by a Soroban contract on Stellar Testnet \u2014 the BLS12-381 pairing runs inside Stellar\u2019s host, not in this page.',st_adv:'Advanced \u00b7 raw proof JSON'});
-  M('ru',{st_eyebrow:'ZK Proof Studio',st_compose_h:'\u0421\u043e\u0431\u0435\u0440\u0438\u0442\u0435 \u0443\u0442\u0432\u0435\u0440\u0436\u0434\u0435\u043d\u0438\u0435',st_priv_note:'\u041f\u0440\u0438\u0432\u0430\u0442\u043d\u044b\u0435 \u0434\u0430\u043d\u043d\u044b\u0435 \u043d\u0435 \u043f\u043e\u043a\u0438\u0434\u0430\u044e\u0442 \u0431\u0440\u0430\u0443\u0437\u0435\u0440 \u2014 \u0440\u0430\u0441\u043a\u0440\u044b\u0432\u0430\u044e\u0442\u0441\u044f \u0442\u043e\u043b\u044c\u043a\u043e \u0434\u043e\u043a\u0430\u0437\u0430\u0442\u0435\u043b\u044c\u0441\u0442\u0432\u043e \u0438 \u043f\u0443\u0431\u043b\u0438\u0447\u043d\u044b\u0439 \u043b\u0438\u043c\u0438\u0442.',st_amount:'\u0421\u0443\u043c\u043c\u0430',st_balance:'\u0411\u0430\u043b\u0430\u043d\u0441',st_limit:'\u041a\u043e\u043c\u043f\u043b\u0430\u0435\u043d\u0441-\u043b\u0438\u043c\u0438\u0442',st_private:'\u043f\u0440\u0438\u0432\u0430\u0442\u043d\u043e',st_public:'\u043f\u0443\u0431\u043b\u0438\u0447\u043d\u043e',st_c_pos:'\u043f\u043e\u0437\u0438\u0442\u0438\u0432\u043d\u043e\u0441\u0442\u044c',st_c_solv:'\u043f\u043b\u0430\u0442\u0451\u0436\u0435\u0441\u043f\u043e\u0441\u043e\u0431\u043d\u043e\u0441\u0442\u044c',st_c_comp:'\u043a\u043e\u043c\u043f\u043b\u0430\u0435\u043d\u0441',st_ok:'\u2713 \u0423\u0442\u0432\u0435\u0440\u0436\u0434\u0435\u043d\u0438\u0435 \u0432\u044b\u043f\u043e\u043b\u043d\u0438\u043c\u043e \u2014 \u043c\u043e\u0436\u043d\u043e \u0441\u0433\u0435\u043d\u0435\u0440\u0438\u0440\u043e\u0432\u0430\u0442\u044c \u043a\u043e\u0440\u0440\u0435\u043a\u0442\u043d\u043e\u0435 \u0434\u043e\u043a\u0430\u0437\u0430\u0442\u0435\u043b\u044c\u0441\u0442\u0432\u043e.',st_bad:'\u2717 \u0423\u0442\u0432\u0435\u0440\u0436\u0434\u0435\u043d\u0438\u0435 \u043d\u0430\u0440\u0443\u0448\u0430\u0435\u0442 \u043e\u0433\u0440\u0430\u043d\u0438\u0447\u0435\u043d\u0438\u0435 \u2014 \u0447\u0435\u0441\u0442\u043d\u043e\u0433\u043e \u0434\u043e\u043a\u0430\u0437\u0430\u0442\u0435\u043b\u044c\u0441\u0442\u0432\u0430 \u043d\u0435 \u0441\u0443\u0449\u0435\u0441\u0442\u0432\u0443\u0435\u0442.',st_run:'\u0421\u0433\u0435\u043d\u0435\u0440\u0438\u0440\u043e\u0432\u0430\u0442\u044c \u0438 \u043f\u0440\u043e\u0432\u0435\u0440\u0438\u0442\u044c \u043e\u043d\u0447\u0435\u0439\u043d',st_run_busy:'\u0414\u043e\u043a\u0430\u0437\u044b\u0432\u0430\u044e \u0432 \u0431\u0440\u0430\u0443\u0437\u0435\u0440\u0435\u2026',st_vis_h:'\u0414\u043e\u043a\u0430\u0437\u0430\u0442\u0435\u043b\u044c\u0441\u0442\u0432\u043e Groth16',st_vis_empty:'\u0414\u0432\u0438\u0433\u0430\u0439\u0442\u0435 \u043f\u043e\u043b\u0437\u0443\u043d\u043a\u0438, \u0447\u0442\u043e\u0431\u044b \u0441\u043e\u0431\u0440\u0430\u0442\u044c \u0443\u0442\u0432\u0435\u0440\u0436\u0434\u0435\u043d\u0438\u0435, \u0437\u0430\u0442\u0435\u043c \u0441\u0433\u0435\u043d\u0435\u0440\u0438\u0440\u0443\u0439\u0442\u0435 \u043d\u0430\u0441\u0442\u043e\u044f\u0449\u0435\u0435 \u0434\u043e\u043a\u0430\u0437\u0430\u0442\u0435\u043b\u044c\u0441\u0442\u0432\u043e.',st_proving:'\u0413\u0435\u043d\u0435\u0440\u0438\u0440\u0443\u044e witness \u0438 \u0434\u043e\u043a\u0430\u0437\u0430\u0442\u0435\u043b\u044c\u0441\u0442\u0432\u043e Groth16\u2026',st_pub_h:'\u041f\u0443\u0431\u043b\u0438\u0447\u043d\u044b\u0439 \u0441\u0438\u0433\u043d\u0430\u043b',st_calldata_h:'\u041e\u043d\u0447\u0435\u0439\u043d-calldata',st_copy:'\u041a\u043e\u043f\u0438\u0440\u043e\u0432\u0430\u0442\u044c',st_copied:'\u0421\u043a\u043e\u043f\u0438\u0440\u043e\u0432\u0430\u043d\u043e',st_time:'\u0412\u0440\u0435\u043c\u044f \u0434\u043e\u043a\u0430\u0437\u0430\u0442\u0435\u043b\u044c\u0441\u0442\u0432\u0430',st_onchain_h:'\u041e\u043d\u0447\u0435\u0439\u043d-\u043f\u0440\u043e\u0432\u0435\u0440\u043a\u0430',st_onchain_lead:'\u0414\u043e\u043a\u0430\u0437\u0430\u0442\u0435\u043b\u044c\u0441\u0442\u0432\u043e \u0432\u044b\u0448\u0435 \u043f\u0440\u043e\u0432\u0435\u0440\u044f\u0435\u0442\u0441\u044f \u043a\u043e\u043d\u0442\u0440\u0430\u043a\u0442\u043e\u043c Soroban \u0432 Stellar Testnet \u2014 \u0441\u043f\u0430\u0440\u0438\u0432\u0430\u043d\u0438\u0435 BLS12-381 \u0432\u044b\u043f\u043e\u043b\u043d\u044f\u0435\u0442\u0441\u044f \u0432 \u0445\u043e\u0441\u0442\u0435 Stellar, \u0430 \u043d\u0435 \u043d\u0430 \u044d\u0442\u043e\u0439 \u0441\u0442\u0440\u0430\u043d\u0438\u0446\u0435.',st_adv:'\u0420\u0430\u0441\u0448\u0438\u0440\u0435\u043d\u043d\u043e \u00b7 raw proof JSON'});
-  M('es',{st_eyebrow:'ZK Proof Studio',st_compose_h:'Comp\u00f3n la afirmaci\u00f3n',st_priv_note:'Las entradas privadas nunca salen de tu navegador \u2014 solo se revelan la prueba y el l\u00edmite p\u00fablico.',st_amount:'Monto',st_balance:'Saldo',st_limit:'L\u00edmite de cumplimiento',st_private:'privado',st_public:'p\u00fablico',st_c_pos:'positividad',st_c_solv:'solvencia',st_c_comp:'cumplimiento',st_ok:'\u2713 La afirmaci\u00f3n es satisfacible \u2014 se puede generar una prueba v\u00e1lida.',st_bad:'\u2717 La afirmaci\u00f3n viola una restricci\u00f3n \u2014 no existe una prueba honesta.',st_run:'Generar prueba y verificar on-chain',st_run_busy:'Probando en tu navegador\u2026',st_vis_h:'Prueba Groth16',st_vis_empty:'Mueve los controles para construir una afirmaci\u00f3n y genera una prueba real.',st_proving:'Generando testigo y prueba Groth16\u2026',st_pub_h:'Se\u00f1al p\u00fablica',st_calldata_h:'Calldata on-chain',st_copy:'Copiar',st_copied:'Copiado',st_time:'Tiempo de prueba',st_onchain_h:'Verificaci\u00f3n on-chain',st_onchain_lead:'La prueba se verifica en un contrato Soroban en Stellar Testnet \u2014 el emparejamiento BLS12-381 corre dentro del host de Stellar.',st_adv:'Avanzado \u00b7 JSON de prueba'});
-  M('de',{st_eyebrow:'ZK Proof Studio',st_compose_h:'Aussage zusammenstellen',st_priv_note:'Private Eingaben verlassen nie deinen Browser \u2014 nur der Beweis und das \u00f6ffentliche Limit werden offengelegt.',st_amount:'Betrag',st_balance:'Guthaben',st_limit:'Compliance-Limit',st_private:'privat',st_public:'\u00f6ffentlich',st_c_pos:'Positivit\u00e4t',st_c_solv:'Solvenz',st_c_comp:'Compliance',st_ok:'\u2713 Die Aussage ist erf\u00fcllbar \u2014 ein g\u00fcltiger Beweis kann erzeugt werden.',st_bad:'\u2717 Die Aussage verletzt eine Constraint \u2014 kein ehrlicher Beweis existiert.',st_run:'Beweis erzeugen & on-chain verifizieren',st_run_busy:'Beweise im Browser\u2026',st_vis_h:'Groth16-Beweis',st_vis_empty:'Bewege die Regler, um eine Aussage zu bilden, und erzeuge einen echten Beweis.',st_proving:'Erzeuge Witness und Groth16-Beweis\u2026',st_pub_h:'\u00d6ffentliches Signal',st_calldata_h:'On-Chain-Calldata',st_copy:'Kopieren',st_copied:'Kopiert',st_time:'Beweiszeit',st_onchain_h:'On-Chain-Verifikation',st_onchain_lead:'Der Beweis wird von einem Soroban-Contract auf Stellar Testnet verifiziert \u2014 das BLS12-381-Pairing l\u00e4uft im Host von Stellar.',st_adv:'Erweitert \u00b7 Roh-Beweis-JSON'});
-  M('uk',{st_eyebrow:'ZK Proof Studio',st_compose_h:'\u0421\u043a\u043b\u0430\u0434\u0456\u0442\u044c \u0442\u0432\u0435\u0440\u0434\u0436\u0435\u043d\u043d\u044f',st_priv_note:'\u041f\u0440\u0438\u0432\u0430\u0442\u043d\u0456 \u0434\u0430\u043d\u0456 \u043d\u0456\u043a\u043e\u043b\u0438 \u043d\u0435 \u0437\u0430\u043b\u0438\u0448\u0430\u044e\u0442\u044c \u0431\u0440\u0430\u0443\u0437\u0435\u0440 \u2014 \u0440\u043e\u0437\u043a\u0440\u0438\u0432\u0430\u044e\u0442\u044c\u0441\u044f \u043b\u0438\u0448\u0435 \u0434\u043e\u043a\u0430\u0437 \u0456 \u043f\u0443\u0431\u043b\u0456\u0447\u043d\u0438\u0439 \u043b\u0456\u043c\u0456\u0442.',st_amount:'\u0421\u0443\u043c\u0430',st_balance:'\u0411\u0430\u043b\u0430\u043d\u0441',st_limit:'\u041a\u043e\u043c\u043f\u043b\u0430\u0454\u043d\u0441-\u043b\u0456\u043c\u0456\u0442',st_private:'\u043f\u0440\u0438\u0432\u0430\u0442\u043d\u043e',st_public:'\u043f\u0443\u0431\u043b\u0456\u0447\u043d\u043e',st_c_pos:'\u043f\u043e\u0437\u0438\u0442\u0438\u0432\u043d\u0456\u0441\u0442\u044c',st_c_solv:'\u043f\u043b\u0430\u0442\u043e\u0441\u043f\u0440\u043e\u043c\u043e\u0436\u043d\u0456\u0441\u0442\u044c',st_c_comp:'\u043a\u043e\u043c\u043f\u043b\u0430\u0454\u043d\u0441',st_ok:'\u2713 \u0422\u0432\u0435\u0440\u0434\u0436\u0435\u043d\u043d\u044f \u0437\u0434\u0456\u0439\u0441\u043d\u0435\u043d\u043d\u0435 \u2014 \u043c\u043e\u0436\u043d\u0430 \u0437\u0433\u0435\u043d\u0435\u0440\u0443\u0432\u0430\u0442\u0438 \u043a\u043e\u0440\u0435\u043a\u0442\u043d\u0438\u0439 \u0434\u043e\u043a\u0430\u0437.',st_bad:'\u2717 \u0422\u0432\u0435\u0440\u0434\u0436\u0435\u043d\u043d\u044f \u043f\u043e\u0440\u0443\u0448\u0443\u0454 \u043e\u0431\u043c\u0435\u0436\u0435\u043d\u043d\u044f \u2014 \u0447\u0435\u0441\u043d
+  var EN={st_eyebrow:'ZK Proof Studio',st_compose_h:'Compose the statement',st_priv_note:'Private inputs never leave your browser — only the proof and the public limit are revealed.',st_amount:'Amount',st_balance:'Balance',st_limit:'Compliance limit',st_private:'private',st_public:'public',st_c_pos:'positivity',st_c_solv:'solvency',st_c_comp:'compliance',st_ok:'✓ Statement is satisfiable — a valid zero-knowledge proof can be generated.',st_bad:'✗ Statement violates a constraint — no honest proof can exist for it.',st_run:'Generate proof & verify on-chain',st_run_busy:'Proving in your browser…',st_vis_h:'Groth16 proof',st_vis_empty:'Move the sliders to build a statement, then generate a real proof to see its group elements and on-chain calldata here.',st_proving:'Generating witness and Groth16 proof…',st_pub_h:'Public signal',st_calldata_h:'On-chain calldata',st_copy:'Copy',st_copied:'Copied',st_time:'Proving time',st_onchain_h:'On-chain verification',st_onchain_lead:'The proof above is verified by a Soroban contract on Stellar Testnet — the BLS12-381 pairing runs inside Stellar’s host, not in this page.',st_adv:'Advanced · raw proof JSON'};
+  var RU={st_eyebrow:'ZK Proof Studio',st_compose_h:'Соберите утверждение',st_priv_note:'Приватные данные не покидают браузер — раскрываются только доказательство и публичный лимит.',st_amount:'Сумма',st_balance:'Баланс',st_limit:'Комплаенс-лимит',st_private:'приватно',st_public:'публично',st_c_pos:'позитивность',st_c_solv:'платёжеспособность',st_c_comp:'комплаенс',st_ok:'✓ Утверждение выполнимо — можно сгенерировать корректное доказательство.',st_bad:'✗ Утверждение нарушает ограничение — честного доказательства не существует.',st_run:'Сгенерировать и проверить ончейн',st_run_busy:'Доказываю в браузере…',st_vis_h:'Доказательство Groth16',st_vis_empty:'Двигайте ползунки, чтобы собрать утверждение, затем сгенерируйте настоящее доказательство, чтобы увидеть его элементы и ончейн-calldata.',st_proving:'Генерирую witness и доказательство Groth16…',st_pub_h:'Публичный сигнал',st_calldata_h:'Ончейн-calldata',st_copy:'Копировать',st_copied:'Скопировано',st_time:'Время доказательства',st_onchain_h:'Ончейн-проверка',st_onchain_lead:'Доказательство выше проверяется контрактом Soroban в Stellar Testnet — спаривание BLS12-381 выполняется в хосте Stellar, а не на этой странице.',st_adv:'Расширенно · raw proof JSON'};
+  M('en',EN); M('ru',RU); M('es',EN); M('de',EN); M('uk',EN);
+})();
+
+/* ---- serialization helpers (match verify.js on-chain encoding) ---- */
+function fp(n){ return BigInt(n).toString(16).padStart(96,'0'); }
+function g1hex(P){ return fp(P[0])+fp(P[1]); }
+function g2hex(P){ var x=P[0],y=P[1]; return G2ORDER==='c1c0' ? fp(x[1])+fp(x[0])+fp(y[1])+fp(y[0]) : fp(x[0])+fp(x[1])+fp(y[0])+fp(y[1]); }
+function fr32(n){ return BigInt(n).toString(16).padStart(64,'0'); }
+function fmt(n){ try{ return Number(n).toLocaleString('en-US'); }catch(e){ return String(n); } }
+function el(tag,cls,txt){ var e=document.createElement(tag); if(cls)e.className=cls; if(txt!=null)e.textContent=txt; return e; }
+
+function readVals(){ return {a:Number(A.value),b:Number(B.value),l:Number(L.value)}; }
+function evalCons(v){ return {pos:v.a>=1, solv:v.a<=v.b, comp:v.a<=v.l}; }
+function setCon(id,ok){ var e=$(id); if(!e) return; e.className='st-con '+(ok?'ok':'bad'); var ic=e.querySelector('.st-cic'); if(ic) ic.textContent=ok?'✓':'✗'; }
+
+function refresh(){
+  if(!A) return;
+  var v=readVals();
+  var av=$('st_amount_v'), bv=$('st_balance_v'), lv=$('st_limit_v');
+  if(av)av.textContent=fmt(v.a); if(bv)bv.textContent=fmt(v.b); if(lv)lv.textContent=fmt(v.l);
+  var c=evalCons(v);
+  setCon('st_c_pos',c.pos); setCon('st_c_solv',c.solv); setCon('st_c_comp',c.comp);
+  var all=c.pos&&c.solv&&c.comp;
+  var s=$('st_status'); if(s){ s.className='st-status '+(all?'ok':'bad'); s.textContent=t(all?'st_ok':'st_bad'); }
+  var btn=$('st_run'); if(btn){ btn.disabled=!all||running; btn.classList.toggle('is-off',!all); }
+}
+
+function copyBtn(get){
+  var b=el('button','st-copy',t('st_copy')); b.type='button';
+  b.addEventListener('click',function(){ var s=get(); try{ if(navigator.clipboard&&navigator.clipboard.writeText) navigator.clipboard.writeText(s); }catch(e){} b.textContent=t('st_copied'); setTimeout(function(){ b.textContent=t('st_copy'); },1200); });
+  return b;
+}
+
+function groupCard(name,curve,bytes,hex){
+  var card=el('div','st-el');
+  var head=el('div','st-el-head');
+  head.appendChild(el('span','st-el-name',name));
+  head.appendChild(el('span','st-el-tag',curve+' · '+bytes+' B'));
+  card.appendChild(head);
+  card.appendChild(el('div','st-el-hex','0x'+hex));
+  var foot=el('div','st-el-foot'); foot.appendChild(copyBtn(function(){ return '0x'+hex; })); card.appendChild(foot);
+  return card;
+}
+
+function renderProof(proof,pub,ms){
+  var vis=$('st_vis'), empty=$('st_vis_empty');
+  if(empty) empty.style.display='none';
+  vis.style.display=''; vis.innerHTML='';
+  var a=g1hex(proof.pi_a), b=g2hex(proof.pi_b), c=g1hex(proof.pi_c);
+  var grid=el('div','st-els');
+  grid.appendChild(groupCard('πa','G1',96,a));
+  grid.appendChild(groupCard('πb','G2',192,b));
+  grid.appendChild(groupCard('πc','G1',96,c));
+  vis.appendChild(grid);
+  var pv=(pub&&pub.length)?pub[0]:'0';
+  var pubWrap=el('div','st-pub');
+  pubWrap.appendChild(el('div','st-pub-h',t('st_pub_h')));
+  pubWrap.appendChild(el('b',null,'limit = '+fmt(pv)));
+  pubWrap.appendChild(el('div','st-el-hex','0x'+fr32(pv)));
+  vis.appendChild(pubWrap);
+  var cd=a+b+c;
+  var cdWrap=el('div','st-cd');
+  var cdh=el('div','st-cd-head'); cdh.appendChild(el('span',null,t('st_calldata_h'))); cdh.appendChild(el('span','st-el-tag','BLS12-381 · '+(cd.length/2)+' B')); cdWrap.appendChild(cdh);
+  cdWrap.appendChild(el('div','st-cd-hex','0x'+cd));
+  var cdf=el('div','st-el-foot'); cdf.appendChild(copyBtn(function(){ return '0x'+cd; })); cdWrap.appendChild(cdf);
+  vis.appendChild(cdWrap);
+  var m=el('div','st-metrics');
+  [['Groth16',t('ver_s_scheme')],['BLS12-381',t('ver_s_curve')],['387',t('ver_s_constraints')],[ms+' ms',t('st_time')]].forEach(function(p){ var cell=el('div','st-metric'); cell.appendChild(el('b',null,p[0])); cell.appendChild(el('span',null,p[1])); m.appendChild(cell); });
+  vis.appendChild(m);
+}
+
+async function run(){
+  if(running) return;
+  var v=readVals(), c=evalCons(v);
+  if(!(c.pos&&c.solv&&c.comp)){ if(window.SP_toast) window.SP_toast(t('st_bad'),'err'); return; }
+  if(!window.snarkjs){ if(window.SP_toast) window.SP_toast(t('ver_sdk'),'err'); return; }
+  running=true;
+  var btn=$('st_run'); var old=btn?btn.textContent:''; if(btn){ btn.disabled=true; btn.textContent=t('st_run_busy'); }
+  var vis=$('st_vis'), empty=$('st_vis_empty');
+  if(empty) empty.style.display='none';
+  if(vis){ vis.style.display=''; vis.innerHTML=''; vis.appendChild(el('div','st-proving',t('st_proving'))); }
+  try{
+    var nw=(window.performance&&performance.now)?function(){return performance.now();}:function(){return Date.now();};
+    var t0=nw();
+    var r=await window.snarkjs.groth16.fullProve({amount:String(v.a),balance:String(v.b),limit:String(v.l)},'assets/zk/transfer.wasm','assets/zk/transfer_final.zkey');
+    var ms=Math.round(nw()-t0);
+    renderProof(r.proof,r.publicSignals,ms);
+    var pf=$('proof'); if(pf) pf.value=JSON.stringify({proof:r.proof,publicSignals:r.publicSignals},null,2);
+    var vb=$('verbtn'); if(vb){ vb.click(); setTimeout(function(){ var o=$('vout'); if(o&&o.scrollIntoView) o.scrollIntoView({behavior:'smooth',block:'start'}); },350); }
+  }catch(e){
+    if(vis){ vis.innerHTML=''; vis.appendChild(el('div','st-vis-empty',t('ver_no_artifacts'))); }
+    if(window.SP_toast) window.SP_toast(t('ver_no_artifacts'),'err');
+  }finally{ running=false; if(btn) btn.textContent=old; refresh(); }
+}
+
+function init(){
+  A=$('st_amount'); B=$('st_balance'); L=$('st_limit');
+  if(!A||!B||!L) return;
+  [A,B,L].forEach(function(x){ x.addEventListener('input',refresh); });
+  var btn=$('st_run'); if(btn) btn.addEventListener('click',run);
+  try{ if(window.SP){ var prev=window.SP.onLang; window.SP.onLang=function(){ try{ if(typeof prev==='function') prev(); }catch(e){} refresh(); }; } }catch(e){}
+  refresh();
+}
+
+if(document.readyState!=='loading') init(); else document.addEventListener('DOMContentLoaded',init);
+})();
