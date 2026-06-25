@@ -15,9 +15,9 @@ All three Soroban contracts are deployed and callable on Testnet:
 
 | Contract | ID | Explorer |
 |---|---|---|
-| **Verifier** (Groth16) | `CCEMEBDWMAOOPFHFQNFCH5BNGYKX43EB44RNKQP3ESGKH2JZYUXXYV5Z` | [view](https://stellar.expert/explorer/testnet/contract/CCEMEBDWMAOOPFHFQNFCH5BNGYKX43EB44RNKQP3ESGKH2JZYUXXYV5Z) |
-| **Pool** (shielded transfers) | `CAIIMNX2IWN7PQDNWCTW6C4CBF2WNPTYQF6GMOSP6PVPNPSHTB3BGGYE` | [view](https://stellar.expert/explorer/testnet/contract/CAIIMNX2IWN7PQDNWCTW6C4CBF2WNPTYQF6GMOSP6PVPNPSHTB3BGGYE) |
-| **ASP** (association-set allow-list) | `CD6XBLR6AG5K5TNLKVO2JWLFYHBFXCEFT25Q2XEAE2XBYM7JZFZOEIO6` | [view](https://stellar.expert/explorer/testnet/contract/CD6XBLR6AG5K5TNLKVO2JWLFYHBFXCEFT25Q2XEAE2XBYM7JZFZOEIO6) |
+| **Verifier** (Groth16) | `CC47UVUPXER6VGOFZJWGIR4DQHMRA426NHLJDBGTPKA5C5HLG3LOB54Y` | [view](https://stellar.expert/explorer/testnet/contract/CC47UVUPXER6VGOFZJWGIR4DQHMRA426NHLJDBGTPKA5C5HLG3LOB54Y) |
+| **Pool** (shielded transfers) | `CDKZPEIVUNGRGIYD6ZT4RWLZBERQX6MUO5FZVIIQP3FRPD67LM624NW3` | [view](https://stellar.expert/explorer/testnet/contract/CDKZPEIVUNGRGIYD6ZT4RWLZBERQX6MUO5FZVIIQP3FRPD67LM624NW3) |
+| **ASP** (association-set allow-list) | `CDATVE3EWOOCTINRRF27GGH4MNHF7NUOAWJ6VY2SXHLXOWCZMGUTSZ3J` | [view](https://stellar.expert/explorer/testnet/contract/CDATVE3EWOOCTINRRF27GGH4MNHF7NUOAWJ6VY2SXHLXOWCZMGUTSZ3J) |
 
 - **Admin / deployer:** `GCY6UL7B6P5LNOEGAU2FULWNX6Q6RZFN4QUW2DC5CY26J6DKR6GFRJBE`
 - **Verifier deploy tx:** [`40542a58…1566e`](https://stellar.expert/explorer/testnet/tx/40542a580b4c09a91747cabb9ab629a06b88627a044d62d9c2cca5d5a1b1566e)
