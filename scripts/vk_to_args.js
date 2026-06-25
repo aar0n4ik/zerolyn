@@ -5,15 +5,17 @@
 // BLS12-381 uncompressed serialization (Stellar host-function format):
 //   Fp = 48 bytes, big-endian
 //   G1 = x(48) || y(48)                                = 96 bytes
-//   G2 = x.c0(48) || x.c1(48) || y.c0(48) || y.c1(48)  = 192 bytes
+//   G2 = x.c1(48) || x.c0(48) || y.c1(48) || y.c0(48)  = 192 bytes
 //
-// snarkjs stores each Fp2 coordinate as [c0, c1]. If the on-chain pairing_check
-// fails with otherwise-correct inputs, flip the limb order: G2_ORDER=c1c0.
+// The Stellar host serializes an Fp2 element c0 + c1*u as be_bytes(c1) || be_bytes(c0)
+// (see rs-soroban-sdk soroban-sdk/src/crypto/bls12_381.rs). snarkjs stores each Fp2
+// coordinate as [c0, c1], so the DEFAULT below emits c1||c0 (G2_ORDER=c1c0).
+// Set G2_ORDER=c0c1 only if a future host build expects the opposite limb order.
 const fs = require("fs");
 const file = process.argv[2];
 if (!file) { console.error("usage: node vk_to_args.js <verification_key.json>"); process.exit(1); }
 const vk = JSON.parse(fs.readFileSync(file, "utf8"));
-const ORDER = process.env.G2_ORDER === "c1c0" ? "c1c0" : "c0c1";
+const ORDER = process.env.G2_ORDER === "c0c1" ? "c0c1" : "c1c0";
 
 const fp = (n) => BigInt(n).toString(16).padStart(96, "0");   // 48 bytes
 const g1 = (p) => fp(p[0]) + fp(p[1]);                         // 96 bytes
