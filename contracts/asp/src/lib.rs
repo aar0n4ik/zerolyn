@@ -1,10 +1,10 @@
 #![no_std]
-//! ShieldPay — ASP (Association Set Provider) allow-list contract
+//! Zerolyn — ASP (Association Set Provider) allow-list contract
 //!
 //! Maintains the Merkle root of approved (KYC'd / non-sanctioned) recipient
 //! pubkeys. The pool's transfer proof must show membership in this root, so a
 //! shielded transfer to a non-approved address is impossible — this is how
-//! ShieldPay keeps privacy AND compliance at the same time.
+//! Zerolyn keeps privacy AND compliance at the same time.
 
 use soroban_sdk::{contract, contracterror, contractimpl, contracttype, Address, BytesN, Env};
 
