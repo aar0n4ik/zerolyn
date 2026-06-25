@@ -5,26 +5,25 @@
 > truth on-chain. Built for **Stellar Hacks: Real-World ZK**.
 
 Live demo: a multi-page web app in `index.html` + `assets/` (deploys to Vercel as a static site).
-The Soroban contracts are **deployed and live on Stellar Testnet** — see the IDs below.
+The Soroban contracts are **deployed and live on Stellar Testnet** — see the IDs below — and the
+**Verify** page generates a real Groth16 proof in your browser and verifies it **on-chain**.
 
 ---
 
 ## ✅ Live on Stellar Testnet
 
-All three Soroban contracts are deployed and callable on Testnet:
+All three Soroban contracts are deployed and callable on Testnet. Open any contract in the
+explorer to see its deployment and invocations:
 
 | Contract | ID | Explorer |
 |---|---|---|
-| **Verifier** (Groth16) | `CC47UVUPXER6VGOFZJWGIR4DQHMRA426NHLJDBGTPKA5C5HLG3LOB54Y` | [view](https://stellar.expert/explorer/testnet/contract/CC47UVUPXER6VGOFZJWGIR4DQHMRA426NHLJDBGTPKA5C5HLG3LOB54Y) |
+| **Verifier** (Groth16 / BLS12-381) | `CC47UVUPXER6VGOFZJWGIR4DQHMRA426NHLJDBGTPKA5C5HLG3LOB54Y` | [view](https://stellar.expert/explorer/testnet/contract/CC47UVUPXER6VGOFZJWGIR4DQHMRA426NHLJDBGTPKA5C5HLG3LOB54Y) |
 | **Pool** (shielded transfers) | `CDKZPEIVUNGRGIYD6ZT4RWLZBERQX6MUO5FZVIIQP3FRPD67LM624NW3` | [view](https://stellar.expert/explorer/testnet/contract/CDKZPEIVUNGRGIYD6ZT4RWLZBERQX6MUO5FZVIIQP3FRPD67LM624NW3) |
 | **ASP** (association-set allow-list) | `CDATVE3EWOOCTINRRF27GGH4MNHF7NUOAWJ6VY2SXHLXOWCZMGUTSZ3J` | [view](https://stellar.expert/explorer/testnet/contract/CDATVE3EWOOCTINRRF27GGH4MNHF7NUOAWJ6VY2SXHLXOWCZMGUTSZ3J) |
 
-- **Admin / deployer:** `GCY6UL7B6P5LNOEGAU2FULWNX6Q6RZFN4QUW2DC5CY26J6DKR6GFRJBE`
-- **Verifier deploy tx:** [`40542a58…1566e`](https://stellar.expert/explorer/testnet/tx/40542a580b4c09a91747cabb9ab629a06b88627a044d62d9c2cca5d5a1b1566e)
-- **ASP deploy tx:** [`52accf54…d62cc`](https://stellar.expert/explorer/testnet/tx/52accf549bf64fb285e0eb9f7719c033b408f57fa9c0e77926395fe9428d62cc)
-- **Pool deploy tx:** [`ba3be885…7a94f132`](https://stellar.expert/explorer/testnet/tx/ba3be88538c0b7fd5e6064bccc4ca1542384e21ae37803d921b03faa7b94f132)
-
-These IDs are wired into `assets/app.js → CONFIG`, so the site links the real contracts and a real on-chain transaction.
+The verifier's **verifying key is installed on-chain** (via `set_vk` during deployment), so a
+live `verify(proof, public_inputs)` call runs the real BLS12-381 pairing inside Stellar's host.
+These IDs are wired into `assets/app.js → CONFIG`.
 
 ---
 
@@ -39,22 +38,42 @@ on Stellar, which exists to move real people's and institutions' money.
 
 | Module | What it proves (in zero knowledge) | Page |
 |---|---|---|
+| **On-chain verifier** | A real Groth16 proof is verified on-chain by a Soroban contract (BLS12-381 pairing in Stellar's host) | `verify.html` |
 | **Shielded transfers** | A USDC/EURC/XLM transfer is valid & balances reconcile, amount hidden | `send.html` |
 | **zkKYC identity** | You passed KYC, are 18+, and are not sanctioned — without revealing identity | `compliance.html` |
 | **Selective disclosure** | A one-time auditor *view key* opens exactly one transaction | `compliance.html` |
 | **Privacy pool / proof-of-innocence** | Your funds belong to a clean association set | `pools.html` |
 | **Proof of reserves** | A custodian is solvent (reserves ≥ liabilities), balances hidden | `pools.html` |
-| **On-chain verifier** | A Soroban verifier contract is deployed & callable on Stellar Testnet | `verify.html` |
+
+> **Today, the full ZK path is real end-to-end on the `verify.html` page** (real prover → real
+> on-chain verification). The other modules show the product experience with simulated,
+> Groth16-shaped proofs and are clearly labelled **"(demo)"** in the UI. See the honesty section below.
 
 Plus an **Ecosystem** page (`ecosystem.html`) mapping Zerolyn onto the Stellar stack
-(USDC/EURC, Freighter, Soroban, Horizon, CCTP, MoneyGram, SEP standards, Protocol 25 "X-Ray").
+(USDC/EURC, Freighter, Albedo, Soroban, Horizon, CCTP, SEP standards, and the **Protocol 22**
+BLS12-381 host functions this project relies on).
+
+## How the ZK works
+
+1. **Circuit** — `circuits/demo.circom` is a small Circom circuit compiled over the **bls12381** prime.
+   It proves knowledge of a secret `x` such that `x³ + x + 5 == out`, where `out` is the only public input.
+2. **Trusted setup / keys** — `scripts/setup.sh` runs the Groth16 setup with snarkjs and exports the
+   proving key (`assets/zk/demo_final.zkey`), the WASM witness generator (`assets/zk/demo.wasm`), and the
+   verifying key, which `scripts/vk_to_args.js` serializes for Soroban (uncompressed, big-endian).
+3. **On-chain verifier** — `contracts/verifier/src/lib.rs` is a Soroban contract that runs the standard
+   Groth16 equation `e(-A,B)·e(α,β)·e(vk_x,γ)·e(C,δ) == 1` using Stellar's native BLS12-381 host
+   functions (`env.crypto().bls12_381()`: `g1_msm`, `g1_add`, `g1_mul`, `pairing_check`). **No stub.**
+4. **In-browser proving + verification** — `verify.html` calls `snarkjs.groth16.fullProve` in the browser,
+   then submits `verify(proof, public_inputs)` to the deployed contract via Soroban RPC. The pairing runs
+   inside Stellar's host; you can optionally record it as a real on-chain transaction with Freighter.
 
 ## Key product features
 
 - **Real Stellar address validation** — full StrKey base32 + CRC16 checksum check. Invalid
   addresses and secret keys (`S…`) are rejected; the app never reports a fake success.
-- **Honest wallet state** — the "connected" indicator turns green after a real Freighter
-  connection; with no extension it connects a clearly-labelled **demo wallet** so the flow stays testable.
+- **Multi-wallet connect** — **Freighter** (desktop extension) and **Albedo** (works on mobile,
+  no install needed). The indicator turns green only after a real connection. With no wallet present,
+  a clearly-labelled demo wallet keeps the flow testable.
 - **SEP-7 payment requests** — generate a `web+stellar:` QR any Stellar wallet can pay.
 - **PDF compliance receipt** — download a real, Unicode-safe PDF receipt of each shielded transfer.
 - **5 languages** — English, Español, Deutsch, Русский, Українська with native translations
@@ -68,16 +87,25 @@ Plus an **Ecosystem** page (`ecosystem.html`) mapping Zerolyn onto the Stellar s
 We keep the marketing honest. Here is the precise status:
 
 **Real and verifiable**
-- The verifier, pool and ASP contracts are **deployed and callable on Stellar Testnet** (IDs + txs above) — anyone can open them in the explorer.
-- The contracts are real Rust/Soroban code (`contracts/`) and the Circom circuit lives in `circuits/`.
-- Address validation, wallet connection, SEP-7 QR generation and the PDF receipt are real, working features.
+- The verifier is real Rust/Soroban code (`contracts/verifier/src/lib.rs`) running a real **Groth16
+  pairing check on BLS12-381** via Stellar's native host functions — there is **no stub and no placeholder**.
+- It is **deployed on Stellar Testnet** (ID above) and its **verifying key is installed on-chain** via `set_vk`.
+- `verify.html` does the whole path for real: it **generates a Groth16 proof in your browser** with snarkjs
+  over the BLS12-381 circuit (`circuits/demo.circom`, artifacts in `assets/zk/`), then **verifies it on-chain**
+  by calling the contract through Soroban RPC. The pairing actually executes inside Stellar's host, and you can
+  optionally record a real on-chain transaction with Freighter.
+- Address validation, multi-wallet connect (Freighter + Albedo), SEP-7 QR generation and the PDF receipt are
+  real, working features.
 
-**Demo / not yet real (clearly labelled in the UI)**
-- The ZK proofs shown in the browser are **Groth16/bn254-shaped objects generated client-side** — the in-browser flow is a **simulation** of the proving pipeline, not a live prover.
-- The site **does not submit a transaction per transfer/verification**; the "send" and "verify" pages link the **real verifier contract and its real deployment transaction** so every link resolves, and the UI labels these as demo / simulated.
-- The verifier's on-chain pairing is a **placeholder**: full BN254 pairing depends on Stellar's BN254 host functions (planned for Protocol 25/26). Today the contract performs structural Groth16 checks; `set_vk` has not been called, so a live `verify` call would return `NotInitialized`.
+**Demo / simulated (clearly labelled in the UI)**
+- The circuit verified on-chain today is an intentionally small **demo circuit** (`x³ + x + 5 == out`). It proves
+  the prove-in-browser → verify-on-chain **pipeline** is real, not the full payment statement.
+- The **send / compliance / pools** pages illustrate the product UX with locally-generated, Groth16-shaped proof
+  objects and are labelled **"(demo)"**. They do not yet produce real circuit proofs or settle value.
+- The production shielded-transfer circuit (`circuits/transfer.circom`) plus a BLS12-381-correct Poseidon is the
+  roadmap target that will let the payment pages use this same real verifier.
 
-Nothing in the UI claims to have settled value or verified a proof on-chain that it hasn't.
+Nothing in the UI claims settled value, or an on-chain-verified proof it hasn't actually produced.
 
 ---
 
@@ -88,16 +116,17 @@ index.html            Home (hero, problem, features, how-it-works, ecosystem, ro
 send.html             Shielded transfer app (wallet, validation, proof pipeline, QR, PDF)
 compliance.html       zkKYC + selective disclosure
 pools.html            Privacy pool / proof-of-innocence + proof of reserves
-verify.html           Proof verifier (local structure + live contract link)
+verify.html           REAL in-browser prover + REAL on-chain verification
 ecosystem.html        Stellar ecosystem & integrations
 assets/
   styles.css          Design system (blue + black, dark)
-  app.js              Core: config (live contract IDs), i18n, nav/footer, Freighter wallet, StrKey validation, QR
+  app.js              Core: config (live contract IDs), i18n, nav/footer, wallet, StrKey validation, QR
   send.js / compliance.js / pools.js / verify.js   Page logic
   i18n.en|es|de|ru|uk.js                            Translation dictionaries
-circuits/             Circom circuit(s)
+  zk/                 Built prover artifacts (demo.wasm, demo_final.zkey, verification_key.json)
+circuits/             Circom circuit(s): demo.circom (live), transfer.circom (roadmap)
 contracts/            Soroban verifier / pool / ASP contracts (Rust)
-scripts/              setup.sh, deploy.sh, vk_to_args.js
+scripts/              setup.sh, deploy.sh, vk_to_args.js, proof_to_args.js
 docs/ARCHITECTURE.md  Architecture notes
 ```
 
@@ -111,30 +140,25 @@ python3 -m http.server 8080
 # then open http://localhost:8080
 ```
 
-## Deploy (Vercel)
-
-The repo includes `vercel.json` (`cleanUrls`, no trailing slash). Import the repo in Vercel
-and deploy — the root `index.html` is served directly. No environment variables required.
-
 ## Reproduce the Testnet deployment
 
-1. Install the Stellar CLI (`cargo binstall stellar-cli`) and the Rust toolchain (`rustup target add wasm32v1-none`).
-2. `bash scripts/setup.sh` — compiles the circuit and prepares the proving/verification keys.
-3. `bash scripts/deploy.sh` — builds and deploys the verifier/ASP/pool contracts to **Stellar Testnet** and prints their contract IDs.
-4. The printed IDs are already wired into `assets/app.js → CONFIG`. Replace them there if you redeploy.
+1. Install the Stellar CLI and the Rust toolchain (`rustup target add wasm32v1-none`), plus `circom`, `snarkjs`, `jq`, and Node.
+2. `bash scripts/setup.sh` — compiles `circuits/demo.circom` over bls12381, runs the Groth16 setup, and writes the prover artifacts to `assets/zk/` and the serialized verifying key.
+3. `bash scripts/deploy.sh` — builds and deploys the verifier/ASP/pool contracts to **Stellar Testnet**, runs `init`, and calls `set_vk` to install the verifying key. Prints the contract IDs.
+4. Put the printed IDs into `assets/app.js → CONFIG` (`verifierContractId`, `poolContractId`, `aspContractId`).
 
 ## Hackathon submission checklist
 
 - [x] Public repository with clear README (this file)
-- [x] Zero-knowledge is load-bearing (privacy + selective disclosure + proof of reserves)
-- [x] Built on Stellar (Soroban verifier, USDC/EURC, Freighter, Horizon, SEP standards)
+- [x] Zero-knowledge is load-bearing (real Groth16 proof verified on-chain on Stellar Testnet)
+- [x] Built on Stellar (Soroban BLS12-381 verifier, USDC/EURC, Freighter/Albedo, Horizon, SEP standards)
 - [x] Soroban contracts deployed & callable on Stellar Testnet (IDs above)
 - [ ] 2–3 minute demo video (record next; link it here and in the footer)
 - [ ] Submit on DoraHacks before the deadline
 
 ## Author
 
-Designed, built, and shipped solo by a 17-year-old developer — circuits, Soroban contracts,
+Designed, built, and shipped solo by a 17-year-old developer — circuit, Soroban contracts,
 and this interface. Socials are in the site footer (GitHub → X → Instagram).
 
 ## License
