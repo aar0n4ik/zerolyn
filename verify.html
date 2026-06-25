@@ -4,24 +4,84 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Zerolyn</title>
-<meta name="description" content="Generate a real zero-knowledge proof in your browser and verify it on-chain by calling a Soroban verifier contract (BLS12-381 pairing) on Stellar Testnet.">
+<meta name="description" content="ZK Proof Studio — compose a private statement, generate a real Groth16 / BLS12-381 proof in your browser, then verify it on-chain by calling a Soroban verifier contract on Stellar Testnet.">
 <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 48 48'%3E%3Cdefs%3E%3ClinearGradient id='g' x1='0' y1='0' x2='48' y2='48'%3E%3Cstop stop-color='%231d4ed8'/%3E%3Cstop offset='.55' stop-color='%232f7bff'/%3E%3Cstop offset='1' stop-color='%2338bdf8'/%3E%3C/linearGradient%3E%3C/defs%3E%3Cpath d='M24 3l16 6v11c0 10-6.8 18.6-16 22-9.2-3.4-16-12-16-22V9z' fill='url(%23g)'/%3E%3C/svg%3E">
 <link rel="stylesheet" href="assets/styles.css">
+<link rel="stylesheet" href="assets/send-lux.css">
+<link rel="stylesheet" href="assets/studio.css">
 </head>
-<body data-title-key="verify_title">
+<body data-title-key="verify_title" class="send-lux">
 
 <section class="section">
   <div class="wrap">
-    <span class="eyebrow" data-i18n="nav_verify">nav_verify</span>
-    <h1 class="h-lg" data-i18n="ver_h">ver_h</h1>
-    <p class="lead" data-i18n="ver_lead">ver_lead</p>
+    <span class="eyebrow st-rise" data-i18n="st_eyebrow">st_eyebrow</span>
+    <h1 class="h-lg st-rise" data-i18n="ver_h">ver_h</h1>
+    <p class="lead st-rise" data-i18n="ver_lead">ver_lead</p>
 
-    <div class="panel">
-      <div class="panel-head"><h3 data-i18n="ver_input">ver_input</h3><button class="btn btn-ghost" id="genbtn" data-i18n="ver_gen">ver_gen</button></div>
+    <div class="split">
+      <div>
+        <div class="panel st-rise">
+          <div class="panel-head">
+            <span class="lux-ic"><svg viewBox='0 0 24 24' fill='none' stroke='currentColor' stroke-width='1.8' stroke-linecap='round' stroke-linejoin='round'><line x1='4' y1='21' x2='4' y2='14'/><line x1='4' y1='10' x2='4' y2='3'/><line x1='12' y1='21' x2='12' y2='12'/><line x1='12' y1='8' x2='12' y2='3'/><line x1='20' y1='21' x2='20' y2='16'/><line x1='20' y1='12' x2='20' y2='3'/><line x1='1' y1='14' x2='7' y2='14'/><line x1='9' y1='8' x2='15' y2='8'/><line x1='17' y1='16' x2='23' y2='16'/></svg></span>
+            <h3 data-i18n="st_compose_h">st_compose_h</h3>
+            <span class="tag" data-i18n="wallet_testnet">wallet_testnet</span>
+          </div>
+          <div class="panel-body">
+            <p class="st-note"><span class="st-lock"><svg viewBox='0 0 24 24' fill='none' stroke='currentColor' stroke-width='1.8' stroke-linecap='round' stroke-linejoin='round'><rect width='18' height='11' x='3' y='11' rx='2'/><path d='M7 11V7a5 5 0 0 1 10 0v4'/></svg></span><span data-i18n="st_priv_note">st_priv_note</span></p>
+
+            <div class="st-slider">
+              <div class="st-srow"><span class="st-slabel" data-i18n="st_amount">st_amount</span><span class="st-badge st-priv" data-i18n="st_private">st_private</span><b class="st-sval mono" id="st_amount_v">2,500</b></div>
+              <input type="range" id="st_amount" min="1" max="1000000" step="1" value="2500">
+            </div>
+            <div class="st-slider">
+              <div class="st-srow"><span class="st-slabel" data-i18n="st_balance">st_balance</span><span class="st-badge st-priv" data-i18n="st_private">st_private</span><b class="st-sval mono" id="st_balance_v">9,000</b></div>
+              <input type="range" id="st_balance" min="0" max="1000000" step="1" value="9000">
+            </div>
+            <div class="st-slider">
+              <div class="st-srow"><span class="st-slabel" data-i18n="st_limit">st_limit</span><span class="st-badge st-pub" data-i18n="st_public">st_public</span><b class="st-sval mono" id="st_limit_v">10,000</b></div>
+              <input type="range" id="st_limit" min="0" max="1000000" step="1" value="10000">
+            </div>
+
+            <div class="st-cons">
+              <div class="st-con" id="st_c_pos"><span class="st-cic"></span><code>amount \u2265 1</code><span class="st-cdesc" data-i18n="st_c_pos">st_c_pos</span></div>
+              <div class="st-con" id="st_c_solv"><span class="st-cic"></span><code>amount \u2264 balance</code><span class="st-cdesc" data-i18n="st_c_solv">st_c_solv</span></div>
+              <div class="st-con" id="st_c_comp"><span class="st-cic"></span><code>amount \u2264 limit</code><span class="st-cdesc" data-i18n="st_c_comp">st_c_comp</span></div>
+            </div>
+
+            <div class="st-status" id="st_status"></div>
+            <button class="btn btn-primary btn-block btn-lg" id="st_run" data-i18n="st_run">st_run</button>
+          </div>
+        </div>
+      </div>
+
+      <div>
+        <div class="panel st-rise">
+          <div class="panel-head"><span class="lux-ic"><svg viewBox='0 0 24 24' fill='none' stroke='currentColor' stroke-width='1.8' stroke-linecap='round' stroke-linejoin='round'><circle cx='12' cy='12' r='1.6'/><path d='M12 2a14 6 0 0 0 0 20'/><path d='M12 2a14 6 0 0 1 0 20'/><path d='M2.5 7.5a14 6 0 0 0 19 9'/><path d='M2.5 16.5a14 6 0 0 1 19-9'/></svg></span><h3 data-i18n="st_vis_h">st_vis_h</h3><span class="tag good">Groth16</span></div>
+          <div class="panel-body">
+            <div class="st-vis-empty" id="st_vis_empty" data-i18n="st_vis_empty">st_vis_empty</div>
+            <div id="st_vis" style="display:none"></div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section class="section">
+  <div class="wrap">
+    <div class="panel st-rise">
+      <div class="panel-head"><span class="lux-ic"><svg viewBox='0 0 24 24' fill='none' stroke='currentColor' stroke-width='1.8' stroke-linecap='round' stroke-linejoin='round'><path d='M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71'/><path d='M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71'/></svg></span><h3 data-i18n="st_onchain_h">st_onchain_h</h3><span class="tag good" data-i18n="wallet_testnet">wallet_testnet</span></div>
       <div class="panel-body">
-        <textarea class="input mono" id="proof" rows="10" spellcheck="false" placeholder='{ "proof": { "pi_a": [...], "pi_b": [...], "pi_c": [...] }, "publicSignals": ["35"] }'></textarea>
-        <button class="btn btn-primary btn-block btn-lg" id="verbtn" data-i18n="ver_btn">ver_btn</button>
+        <p class="st-onchain-lead" data-i18n="st_onchain_lead">st_onchain_lead</p>
         <div class="console" id="vout" style="display:none"></div>
+        <details class="st-adv">
+          <summary data-i18n="st_adv">st_adv</summary>
+          <div class="st-adv-body">
+            <div class="st-adv-head"><button class="btn btn-ghost" id="genbtn" data-i18n="ver_gen">ver_gen</button></div>
+            <textarea class="input mono" id="proof" rows="10" spellcheck="false" placeholder='{ "proof": { "pi_a": [...], "pi_b": [...], "pi_c": [...] }, "publicSignals": ["10000"] }'></textarea>
+            <button class="btn btn-soft btn-block" id="verbtn" data-i18n="ver_btn">ver_btn</button>
+          </div>
+        </details>
       </div>
     </div>
   </div>
@@ -37,6 +97,8 @@
 <script src="assets/app.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/@stellar/stellar-sdk@13.1.0/dist/stellar-sdk.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/snarkjs@0.7.5/build/snarkjs.min.js"></script>
+<script src="https://unpkg.com/@stellar/freighter-api@6.0.1/build/index.min.js"></script>
 <script src="assets/verify.js"></script>
+<script src="assets/studio.js"></script>
 </body>
 </html>
