@@ -1,4 +1,4 @@
-/* Zerolyn — send page: REAL Stellar Testnet payments (single wallet: Freighter via official @stellar/freighter-api) */
+/* Zerolyn — send page: REAL Stellar Testnet payments. Device-aware wallet: desktop Freighter extension + Freighter Mobile via WalletConnect v2 (auto-opens the app, like Trust Wallet). */
 (function(){
 'use strict';
 var t=window.SP_t, V=window.SP_validate, QR=window.SP_QR,
@@ -23,13 +23,19 @@ function tt(k,f){ var v=t(k); return (v&&v!==k)?v:f; }
     send_need_wallet:'Connect a wallet first.',send_need_valid:'Enter a valid recipient address.',send_need_amount:'Enter an amount greater than zero.',
     wallet_no_freighter:'Freighter wallet not found.',wallet_wrong_net:'Switch Freighter to Stellar Testnet.',wallet_rejected:'Connection cancelled.',
     wm_pc_t:'Connect on desktop',
-    wm_pc_b:'Install the <a href="https://www.freighter.app/" target="_blank" rel="noopener">Freighter</a> browser extension, unlock it and pick your account, then press “Connect wallet” here.',
+    wm_pc_b:'Install the <a href=\"https://www.freighter.app/\" target=\"_blank\" rel=\"noopener\">Freighter</a> browser extension, unlock it and pick your account, then press “Connect wallet” here.',
     wm_pc_cta:'Get Freighter extension',
     wm_mob_t:'Connect on phone',
-    wm_mob_b:'Open this page inside the Freighter app: launch Freighter, open its built-in browser (Discover) and paste this link. The wallet connects automatically there.',
+    wm_mob_b:'Tap “Connect wallet” to open the Freighter app on your phone and approve linking this page.',
     wm_mob_cta:'Copy page link',
     wm_copied:'Link copied',
     wm_close:'Close',
+    wc_connecting_t:'Connect Freighter',
+    wc_connecting_b:'Approve the connection request in your Freighter app to link this page.',
+    wc_open:'Open in Freighter',
+    wc_scan:'Or scan with Freighter on another device',
+    wc_failed_t:'Couldn’t connect',
+    wc_failed_b:'The wallet connection wasn’t completed. Open your Freighter app, finish setup, then try again.',
     send_no_balance:'Not enough {a} balance for this amount.',send_sender_no_trust:'You have no {a} trustline yet.',
     send_dest_missing:'Recipient account is not funded on Testnet.',send_dest_no_trust:'Recipient has no {a} trustline.',
     send_signed_rejected:'Signature was declined in your wallet.',bal_label:'Balance',
@@ -103,13 +109,19 @@ function tt(k,f){ var v=t(k); return (v&&v!==k)?v:f; }
     send_need_wallet:'Сначала подключите кошелёк.',send_need_valid:'Введите корректный адрес получателя.',send_need_amount:'Введите сумму больше нуля.',
     wallet_no_freighter:'Кошелёк Freighter не найден.',wallet_wrong_net:'Переключите Freighter на Stellar Testnet.',wallet_rejected:'Подключение отменено.',
     wm_pc_t:'Подключение на компьютере',
-    wm_pc_b:'Установите расширение <a href="https://www.freighter.app/" target="_blank" rel="noopener">Freighter</a> для браузера, разблокируйте его и выберите аккаунт, затем нажмите «Подключить кошелёк» здесь.',
+    wm_pc_b:'Установите расширение <a href=\"https://www.freighter.app/\" target=\"_blank\" rel=\"noopener\">Freighter</a> для браузера, разблокируйте его и выберите аккаунт, затем нажмите «Подключить кошелёк» здесь.',
     wm_pc_cta:'Установить Freighter',
     wm_mob_t:'Подключение на телефоне',
-    wm_mob_b:'Откройте эту страницу внутри приложения Freighter: запустите Freighter, откройте встроенный браузер (Discover) и вставьте эту ссылку — кошелёк подключится там автоматически.',
+    wm_mob_b:'Нажмите «Подключить кошелёк», чтобы открыть приложение Freighter на телефоне и подтвердить привязку этой страницы.',
     wm_mob_cta:'Скопировать ссылку',
     wm_copied:'Ссылка скопирована',
     wm_close:'Закрыть',
+    wc_connecting_t:'Подключение Freighter',
+    wc_connecting_b:'Подтвердите запрос на подключение в приложении Freighter, чтобы привязать эту страницу.',
+    wc_open:'Открыть в Freighter',
+    wc_scan:'Или отсканируйте другим устройством с Freighter',
+    wc_failed_t:'Не удалось подключить',
+    wc_failed_b:'Подключение кошелька не завершено. Откройте приложение Freighter, завершите настройку и попробуйте снова.',
     send_no_balance:'Недостаточно баланса {a} для этой суммы.',send_sender_no_trust:'У вас ещё нет trustline для {a}.',
     send_dest_missing:'Аккаунт получателя не профинансирован в Testnet.',send_dest_no_trust:'У получателя нет trustline для {a}.',
     send_signed_rejected:'Подпись отклонена в кошельке.',bal_label:'Баланс',
@@ -181,8 +193,9 @@ function rcptReason(a){
 }
 function memoText(str){ if(!str) return null; function blen(x){ return unescape(encodeURIComponent(x)).length; } if(blen(str)<=28) return str; var out=''; for(var i=0;i<str.length;i++){ if(blen(out+str[i])>28) break; out+=str[i]; } return out||null; }
 
-/* ---------- Wallet: Freighter only (auto device detection: desktop extension + Freighter mobile in-app browser) ---------- */
+/* ---------- Wallet: Freighter only. Desktop = extension; Phone = WalletConnect v2 (auto-opens the Freighter app). ---------- */
 function FA(){ return window.freighterApi || (window.freighter && window.freighter.api) || null; }
+function WC(){ return (window.SPWC && window.SPWC.ready && window.SPWC.ready()) ? window.SPWC : null; }
 function isMobileDevice(){
   try{ if(navigator.userAgentData && typeof navigator.userAgentData.mobile==='boolean') return navigator.userAgentData.mobile; }catch(_){}
   var ua=navigator.userAgent||navigator.vendor||'';
@@ -200,12 +213,12 @@ function waitForFreighter(ms){
     },120);
   });
 }
-var WM_ICON_DESK='<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="3" width="20" height="14" rx="2"/><path d="M8 21h8"/><path d="M12 17v4"/></svg>';
-var WM_ICON_PHONE='<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="5" y="2" width="14" height="20" rx="3"/><path d="M11 18h2"/></svg>';
+var WM_ICON_DESK='<svg viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"1.8\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><rect x=\"2\" y=\"3\" width=\"20\" height=\"14\" rx=\"2\"/><path d=\"M8 21h8\"/><path d=\"M12 17v4\"/></svg>';
+var WM_ICON_PHONE='<svg viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"1.8\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><rect x=\"5\" y=\"2\" width=\"14\" height=\"20\" rx=\"3\"/><path d=\"M11 18h2\"/></svg>';
 function ensureWalletModalStyles(){
   if(document.getElementById('wm-style')) return;
   var st=document.createElement('style'); st.id='wm-style';
-  st.textContent='.wm-backdrop{position:fixed;inset:0;z-index:99999;display:flex;align-items:center;justify-content:center;padding:20px;background:rgba(16,24,40,.45);-webkit-backdrop-filter:blur(6px);backdrop-filter:blur(6px);animation:wmFade .2s ease}@keyframes wmFade{from{opacity:0}to{opacity:1}}.wm-card{position:relative;width:100%;max-width:380px;background:#fff;border-radius:20px;padding:28px 24px 24px;box-shadow:0 30px 80px -20px rgba(16,24,40,.5);text-align:center;animation:wmPop .3s cubic-bezier(.16,1,.3,1)}@keyframes wmPop{from{opacity:0;transform:translateY(12px) scale(.98)}to{opacity:1;transform:none}}.wm-x{position:absolute;top:12px;right:12px;width:32px;height:32px;border:none;background:rgba(16,24,40,.06);border-radius:999px;font-size:20px;line-height:1;color:#4a5160;cursor:pointer}.wm-x:hover{background:rgba(16,24,40,.12)}.wm-ic{width:54px;height:54px;margin:2px auto 14px;border-radius:16px;display:grid;place-items:center;background:linear-gradient(160deg,#eaf0ff,#dbe6ff);color:#1d4ed8}.wm-ic svg{width:28px;height:28px}.wm-t{margin:0 0 8px;font-size:19px;color:#1a1d23;font-weight:700}.wm-b{margin:0 0 18px;font-size:14px;line-height:1.55;color:#4a5160}.wm-b a{color:#1d4ed8;font-weight:600;text-decoration:none}.wm-b a:hover{text-decoration:underline}.wm-cta{display:flex;align-items:center;justify-content:center;width:100%;padding:12px 16px;border-radius:12px;border:none;background:linear-gradient(160deg,#2f7bff,#1d4ed8);color:#fff;font-size:15px;font-weight:600;cursor:pointer;text-decoration:none;box-sizing:border-box}.wm-cta:hover{filter:brightness(1.05)}.wm-retry{display:flex;align-items:center;justify-content:center;width:100%;margin-top:10px;padding:11px 16px;border-radius:12px;border:1px solid rgba(16,24,40,.14);background:#fff;color:#1a1d23;font-size:14px;font-weight:600;cursor:pointer;box-sizing:border-box}.wm-retry:hover{background:rgba(16,24,40,.04)}';
+  st.textContent='.wm-backdrop{position:fixed;inset:0;z-index:99999;display:flex;align-items:center;justify-content:center;padding:20px;background:rgba(16,24,40,.45);-webkit-backdrop-filter:blur(6px);backdrop-filter:blur(6px);animation:wmFade .2s ease}@keyframes wmFade{from{opacity:0}to{opacity:1}}.wm-card{position:relative;width:100%;max-width:380px;background:#fff;border-radius:20px;padding:28px 24px 24px;box-shadow:0 30px 80px -20px rgba(16,24,40,.5);text-align:center;animation:wmPop .3s cubic-bezier(.16,1,.3,1)}@keyframes wmPop{from{opacity:0;transform:translateY(12px) scale(.98)}to{opacity:1;transform:none}}.wm-x{position:absolute;top:12px;right:12px;width:32px;height:32px;border:none;background:rgba(16,24,40,.06);border-radius:999px;font-size:20px;line-height:1;color:#4a5160;cursor:pointer}.wm-x:hover{background:rgba(16,24,40,.12)}.wm-ic{width:54px;height:54px;margin:2px auto 14px;border-radius:16px;display:grid;place-items:center;background:linear-gradient(160deg,#eaf0ff,#dbe6ff);color:#1d4ed8}.wm-ic svg{width:28px;height:28px}.wm-t{margin:0 0 8px;font-size:19px;color:#1a1d23;font-weight:700}.wm-b{margin:0 0 18px;font-size:14px;line-height:1.55;color:#4a5160}.wm-b a{color:#1d4ed8;font-weight:600;text-decoration:none}.wm-b a:hover{text-decoration:underline}.wm-cta{display:flex;align-items:center;justify-content:center;width:100%;padding:12px 16px;border-radius:12px;border:none;background:linear-gradient(160deg,#2f7bff,#1d4ed8);color:#fff;font-size:15px;font-weight:600;cursor:pointer;text-decoration:none;box-sizing:border-box}.wm-cta:hover{filter:brightness(1.05)}.wm-retry{display:flex;align-items:center;justify-content:center;width:100%;margin-top:10px;padding:11px 16px;border-radius:12px;border:1px solid rgba(16,24,40,.14);background:#fff;color:#1a1d23;font-size:14px;font-weight:600;cursor:pointer;box-sizing:border-box}.wm-retry:hover{background:rgba(16,24,40,.04)}.wm-spin{width:46px;height:46px;margin:2px auto 14px;border-radius:50%;border:3px solid rgba(29,78,216,.18);border-top-color:#1d4ed8;animation:wmSpin .8s linear infinite}@keyframes wmSpin{to{transform:rotate(360deg)}}.wm-qr{margin:8px auto 2px;display:flex;align-items:center;justify-content:center;min-height:0}.wm-qr img,.wm-qr canvas{border-radius:12px}.wm-or{margin:14px 0 8px;font-size:11px;letter-spacing:.05em;text-transform:uppercase;color:#8a93a6}';
   document.head.appendChild(st);
 }
 function closeWalletModal(){ var m=document.getElementById('wm-backdrop'); if(m&&m.parentNode) m.parentNode.removeChild(m); }
@@ -215,185 +228,36 @@ function showWalletModal(){
   var bd=document.createElement('div'); bd.id='wm-backdrop'; bd.className='wm-backdrop';
   var card=document.createElement('div'); card.className='wm-card';
   var html='';
-  html+='<button class="wm-x" type="button" aria-label="'+tt('wm_close','Close')+'">×</button>';
-  html+='<div class="wm-ic">'+(mob?WM_ICON_PHONE:WM_ICON_DESK)+'</div>';
-  html+='<h3 class="wm-t">'+(mob?t('wm_mob_t'):t('wm_pc_t'))+'</h3>';
-  html+='<div class="wm-b">'+(mob?t('wm_mob_b'):t('wm_pc_b'))+'</div>';
-  if(mob){ html+='<button class="wm-cta" type="button" id="wm-copy">'+t('wm_mob_cta')+'</button>'; }
-  else { html+='<a class="wm-cta" href="https://www.freighter.app/" target="_blank" rel="noopener">'+t('wm_pc_cta')+'</a><button class="wm-retry" type="button" id="wm-retry">'+t('wallet_connect')+'</button>'; }
+  html+='<button class=\"wm-x\" type=\"button\" aria-label=\"'+tt('wm_close','Close')+'\">×</button>';
+  html+='<div class=\"wm-ic\">'+(mob?WM_ICON_PHONE:WM_ICON_DESK)+'</div>';
+  html+='<h3 class=\"wm-t\">'+(mob?t('wm_mob_t'):t('wm_pc_t'))+'</h3>';
+  html+='<div class=\"wm-b\">'+(mob?t('wm_mob_b'):t('wm_pc_b'))+'</div>';
+  if(mob){ html+='<button class=\"wm-cta\" type=\"button\" id=\"wm-retry\">'+tt('wallet_connect','Connect wallet')+'</button>'; }
+  else { html+='<a class=\"wm-cta\" href=\"https://www.freighter.app/\" target=\"_blank\" rel=\"noopener\">'+t('wm_pc_cta')+'</a><button class=\"wm-retry\" type=\"button\" id=\"wm-retry\">'+tt('wallet_connect','Connect wallet')+'</button>'; }
   card.innerHTML=html; bd.appendChild(card); document.body.appendChild(bd);
   bd.addEventListener('click',function(e){ if(e.target===bd) closeWalletModal(); });
   var x=card.querySelector('.wm-x'); if(x) x.addEventListener('click',closeWalletModal);
-  var cp=card.querySelector('#wm-copy');
-  if(cp) cp.addEventListener('click',function(){ var url=location.href; function done(){ cp.textContent=t('wm_copied'); } try{ if(navigator.clipboard&&navigator.clipboard.writeText){ navigator.clipboard.writeText(url).then(done,done); } else { var ta=document.createElement('textarea'); ta.value=url; ta.style.position='fixed'; ta.style.opacity='0'; document.body.appendChild(ta); ta.focus(); ta.select(); try{ document.execCommand('copy'); }catch(_){} document.body.removeChild(ta); done(); } }catch(_){ done(); } });
   var rt=card.querySelector('#wm-retry'); if(rt) rt.addEventListener('click',function(){ closeWalletModal(); Wallet.connect().then(renderWallet); });
 }
-var Wallet={ address:null, provider:'freighter' };
-Wallet.connect=async function(){
-  var api=await waitForFreighter(isMobileDevice()?4000:2500);
-  if(!api){ S.error(); showWalletModal(); return; }
-  var present=true;
-  try{ if(api.isConnected){ var c=await api.isConnected(); present=(c&&typeof c==='object')?(c.isConnected!==false):!!c; } }catch(_){ present=true; }
-  if(!present){ S.error(); showWalletModal(); return; }
-  try{
-    var addr=null,r;
-    if(api.requestAccess){ r=await api.requestAccess(); if(r&&r.error) throw mkErr((r.error&&(r.error.message||r.error))||t('wallet_rejected')); addr=(r&&r.address)||(typeof r==='string'?r:null); }
-    if(!addr&&api.getAddress){ r=await api.getAddress(); if(r&&r.error) throw mkErr(t('wallet_rejected')); addr=(r&&r.address)||(typeof r==='string'?r:null); }
-    if(!addr&&api.getPublicKey){ addr=await api.getPublicKey(); }
-    if(!addr) throw mkErr(t('wallet_rejected'));
-    var net=null; try{ if(api.getNetworkDetails){ var nd=await api.getNetworkDetails(); net=(nd&&(nd.network||nd.networkPassphrase))||null; } else if(api.getNetwork){ var nn=await api.getNetwork(); net=(nn&&nn.network)||nn; } }catch(_){}
-    if(net&&String(net).toUpperCase().indexOf('TEST')<0){ toast(t('wallet_wrong_net'),'err'); S.error(); return; }
-    Wallet.address=addr; Wallet.provider='freighter'; closeWalletModal(); S.success();
-  }catch(e){ toast((e&&e._uimsg)||t('wallet_rejected'),'err'); S.error(); }
-};
-Wallet.disconnect=function(){ Wallet.address=null; };
-Wallet.sign=async function(xdr){
-  var api=FA(); if(!api) throw mkErr(t('wallet_no_freighter'));
-  var opts={networkPassphrase:PASS(),network:'TESTNET',address:Wallet.address,accountToSign:Wallet.address};
-  var r=await api.signTransaction(xdr,opts);
-  if(typeof r==='string') return r;
-  if(r&&r.error) throw mkErr((r.error&&(r.error.message||r.error))||t('send_signed_rejected'));
-  if(r&&r.signedTxXdr) return r.signedTxXdr;
-  if(r&&r.signedXDR) return r.signedXDR;
-  throw mkErr(t('send_signed_rejected'));
-};
-
-/* ---------- pipeline UI ---------- */
-var STEPS=[['stepv_w','stepv_wd'],['stepv_p','stepv_pd'],['stepv_c','stepv_cd'],['stepv_s','stepv_sd']];
-function buildPipe(){ var p=$('pipe'); if(!p) return; p.innerHTML=''; STEPS.forEach(function(st,i){ var row=document.createElement('div'); row.className='step'; row.id='st'+i; row.innerHTML='<span class="step-ic" id="sti'+i+'">○</span><div class="step-tx"><b>'+t(st[0])+'</b><span>'+t(st[1])+'</span></div>'; p.appendChild(row); }); curStep=-1; }
-function resetPipe(){ buildPipe(); }
-function stepOn(i){ curStep=i; var r=$('st'+i), ic=$('sti'+i); if(r)r.className='step active'; if(ic)ic.textContent='◐'; }
-function stepDone(i){ var r=$('st'+i), ic=$('sti'+i); if(r)r.className='step done'; if(ic)ic.textContent='✓'; }
-function pipeFail(){ if(curStep<0) return; var r=$('st'+curStep), ic=$('sti'+curStep); if(r)r.className='step fail'; if(ic)ic.textContent='✕'; }
-function setBusy(b){ busy=b; var sb=$('sendbtn'); if(!sb) return; sb.disabled=b; sb.textContent=b?t('send_btn_busy'):t('send_btn'); }
-
-/* ---------- recipient validation UI ---------- */
-function validateRcptUI(){ var el=$('rcpt'); if(!el) return; var a=(el.value||'').trim(); var h=$('rhint'); if(!a){ if(h){h.textContent='';h.className='hint';} lastValid=false; return; } lastValid=validRcpt(a); if(h){ h.textContent=lastValid?'':rcptReason(a); h.className='hint'+(lastValid?'':' bad'); } }
-
-/* ---------- send (real) ---------- */
-async function doSend(){
-  if(busy) return;
-  var s=sdk(); if(!s){ toast(t('sdk_missing'),'err'); S.error(); return; }
-  if(!Wallet.address){ toast(t('send_need_wallet'),'err'); S.error(); return; }
-  var to=(($('rcpt')&&$('rcpt').value)||'').trim();
-  if(!validRcpt(to)){ toast(rcptReason(to)||t('send_need_valid'),'err'); S.error(); validateRcptUI(); return; }
-  var code=($('asset')&&$('asset').value)||'XLM'; var def=findAsset(code);
-  var amount=parseFloat(($('amt')&&$('amt').value)||'0');
-  if(!(amount>0)){ toast(t('send_need_amount'),'err'); S.error(); return; }
-  var amt=trimAmount(amount);
-  var memo=(($('memo')&&$('memo').value)||'').trim();
-  setBusy(true); resetPipe(); if($('receipt')) $('receipt').style.display='none';
-  var srv=server();
-  try{
-    stepOn(0);
-    var asset=def.issuer? new s.Asset(def.code,def.issuer) : s.Asset.native();
-    var src=await srv.loadAccount(Wallet.address);
-    var have=balOf(src.balances,def);
-    if(def.issuer && have===null) throw mkErr(t('send_sender_no_trust').replace('{a}',def.code));
-    if(have!==null && parseFloat(have) < parseFloat(amt)) throw mkErr(t('send_no_balance').replace('{a}',def.code));
-    var destAcct=null; try{ destAcct=await srv.loadAccount(to); }catch(e){ destAcct=null; }
-    var useCreate=false;
-    if(!destAcct){ if(def.issuer){ throw mkErr(t('send_dest_missing')); } else if(parseFloat(amt)>=1){ useCreate=true; } else { throw mkErr(t('send_dest_missing')); } }
-    if(def.issuer && destAcct && balOf(destAcct.balances,def)===null) throw mkErr(t('send_dest_no_trust').replace('{a}',def.code));
-    stepDone(0);
-
-    stepOn(1);
-    var fee=s.BASE_FEE; try{ var f=await srv.fetchBaseFee(); if(f) fee=String(f); }catch(_){}
-    var op=useCreate? s.Operation.createAccount({destination:to,startingBalance:amt}) : s.Operation.payment({destination:to,asset:asset,amount:amt});
-    var tb=new s.TransactionBuilder(src,{fee:String(fee),networkPassphrase:PASS()}).addOperation(op);
-    var mt=memoText(memo); if(mt){ try{ tb=tb.addMemo(s.Memo.text(mt)); }catch(_){} }
-    var tx=tb.setTimeout(180).build();
-    stepDone(1);
-
-    stepOn(2);
-    var signed=await Wallet.sign(tx.toXDR());
-    stepDone(2);
-
-    stepOn(3);
-    var txObj=s.TransactionBuilder.fromXDR(signed,PASS());
-    var res=await srv.submitTransaction(txObj);
-    stepDone(3);
-    var hash=res.hash||(res&&res.id)||'';
-    fillReceipt({from:Wallet.address,to:to,amount:amt,code:def.code,memo:mt||'',hash:hash,time:new Date().toLocaleString()});
-    toast(t('send_done'),'ok'); S.success();
-    fetchBalances();
-  }catch(e){
-    var msg=(e&&e._uimsg)||horizonError(e)||(e&&e.message)||t('send_fail');
-    toast(msg,'err'); S.error(); pipeFail();
-  } finally { setBusy(false); }
+function showWCConnecting(){
+  ensureWalletModalStyles(); closeWalletModal();
+  var bd=document.createElement('div'); bd.id='wm-backdrop'; bd.className='wm-backdrop';
+  var card=document.createElement('div'); card.className='wm-card';
+  var html='';
+  html+='<button class=\"wm-x\" type=\"button\" aria-label=\"'+tt('wm_close','Close')+'\">×</button>';
+  html+='<div class=\"wm-spin\"></div>';
+  html+='<h3 class=\"wm-t\">'+tt('wc_connecting_t','Connect Freighter')+'</h3>';
+  html+='<div class=\"wm-b\">'+tt('wc_connecting_b','Approve the connection request in your Freighter app to link this page.')+'</div>';
+  html+='<button class=\"wm-cta\" type=\"button\" id=\"wm-open\">'+tt('wc_open','Open in Freighter')+'</button>';
+  html+='<div class=\"wm-or\">'+tt('wc_scan','Or scan with Freighter on another device')+'</div>';
+  html+='<div class=\"wm-qr\" id=\"wm-qr\"></div>';
+  card.innerHTML=html; bd.appendChild(card); document.body.appendChild(bd);
+  bd.addEventListener('click',function(e){ if(e.target===bd){ closeWalletModal(); try{ if(window.SPWC) window.SPWC.disconnect(); }catch(_){} } });
+  var x=card.querySelector('.wm-x'); if(x) x.addEventListener('click',function(){ closeWalletModal(); try{ if(window.SPWC) window.SPWC.disconnect(); }catch(_){} });
 }
-
-function fillReceipt(r){
-  lastReceipt=r;
-  var sh=shorten||function(x){return x;};
-  if($('r_from')) $('r_from').textContent=sh(r.from);
-  if($('r_to')) $('r_to').textContent=sh(r.to);
-  if($('r_amt')) $('r_amt').textContent=r.amount+' '+r.code;
-  if($('r_proof')) $('r_proof').textContent=r.memo||'—';
-  if($('r_tx')) $('r_tx').textContent=sh(r.hash);
-  if($('r_time')) $('r_time').textContent=r.time;
-  var tv=$('txview'); if(tv) tv.href=explorerTx(r.hash);
-  if($('receipt')) $('receipt').style.display='';
-}
-
-function reset(){ if($('receipt')) $('receipt').style.display='none'; resetPipe(); var q=$('qr'); if(q) q.innerHTML=''; var qh=$('qrhint'); if(qh) qh.textContent=''; }
-
-/* ---------- wallet render + balances ---------- */
-function renderWallet(){ var dot=$('wdot'), st=$('wstate'), ad=$('waddr'), btn=$('wbtn'); var on=!!Wallet.address; var sh=shorten||function(x){return x;}; if(dot) dot.className='dot '+(on?'on':'off'); if(st) st.textContent= on? sh(Wallet.address) : tt('wallet_not','Not connected'); if(ad) ad.textContent=''; if(btn) btn.textContent= on? tt('wallet_disconnect','Disconnect') : tt('wallet_connect','Connect wallet'); if(on){ closeWalletModal(); fetchBalances(); startBalPoll(); } else { stopBalPoll(); var wb=$('wbal'); if(wb) wb.textContent=''; } }
-var balTimer=null;
-function startBalPoll(){ stopBalPoll(); balTimer=setInterval(function(){ if(!Wallet.address){ stopBalPoll(); return; } fetchBalances(); },7000); }
-function stopBalPoll(){ if(balTimer){ clearInterval(balTimer); balTimer=null; } }
-async function fetchBalances(){ if(!Wallet.address||!sdk()) return; var code=($('asset')&&$('asset').value)||'XLM'; var def=findAsset(code); var wb=$('wbal'); if(!wb){ wb=document.createElement('div'); wb.id='wbal'; wb.className='hint'; var ad=$('waddr'); if(ad&&ad.parentNode) ad.parentNode.appendChild(wb); else return; } try{ var acct=await server().loadAccount(Wallet.address); var bal=balOf(acct.balances,def); wb.textContent=tt('bal_label','Balance')+': '+(bal!=null?trimAmount(bal)+' '+def.code:'0 '+def.code); }catch(e){ wb.textContent=tt('bal_label','Balance')+': 0 '+def.code; } }
-
-/* ---------- SEP-7 QR ---------- */
-function doQR(){ var to=(($('rcpt')&&$('rcpt').value)||'').trim(); if(!validRcpt(to)){ toast(rcptReason(to)||t('send_need_valid'),'err'); S.error(); return; } var code=($('asset')&&$('asset').value)||'XLM'; var def=findAsset(code); var amt=trimAmount(parseFloat(($('amt')&&$('amt').value)||'0')); var memo=(($('memo')&&$('memo').value)||'').trim(); var uri='web+stellar:pay?destination='+encodeURIComponent(to)+'&amount='+encodeURIComponent(amt); if(def.issuer){ uri+='&asset_code='+encodeURIComponent(def.code)+'&asset_issuer='+encodeURIComponent(def.issuer); } var mt=memoText(memo); if(mt) uri+='&memo='+encodeURIComponent(mt); var box=$('qr'); if(box){ box.innerHTML=''; if(window.QRCode){ try{ new window.QRCode(box,{text:uri,width:180,height:180,correctLevel:window.QRCode.CorrectLevel.M}); }catch(_){ box.textContent=uri; } } else if(QR&&QR.renderQR){ try{ QR.renderQR(box,uri); }catch(_){ box.textContent=uri; } } else { box.textContent=uri; } } var qh=$('qrhint'); if(qh) qh.textContent=uri; S.click&&S.click(); }
-
-/* ---------- disclosure (honest roadmap) ---------- */
-function doDisc(){ toast(t('send_disc_note'),'ok'); S.click&&S.click(); }
-
-/* ---------- minimal valid PDF receipt ---------- */
-function pdfEsc(s){ return String(s).replace(/[\\()]/g,function(c){return '\\'+c;}); }
-function asciiOnly(s){ return String(s).replace(/[^\x20-\x7E]/g,'?'); }
-function buildPDF(lines){
-  var head='%PDF-1.4\n';
-  var objs=[];
-  objs.push('<</Type/Catalog/Pages 2 0 R>>');
-  objs.push('<</Type/Pages/Kids[3 0 R]/Count 1>>');
-  objs.push('<</Type/Page/Parent 2 0 R/MediaBox[0 0 595 842]/Resources<</Font<</F1 5 0 R>>>>/Contents 4 0 R>>');
-  var body='BT /F1 11 Tf 1 0 0 1 56 790 Tm\n';
-  for(var i=0;i<lines.length;i++){ body+='('+pdfEsc(asciiOnly(lines[i]))+') Tj\n0 -18 Td\n'; }
-  body+='ET';
-  objs.push('<</Length '+body.length+'>>\nstream\n'+body+'\nendstream');
-  objs.push('<</Type/Font/Subtype/Type1/BaseFont/Helvetica>>');
-  var out=head, offsets=[];
-  for(var j=0;j<objs.length;j++){ offsets.push(out.length); out+=(j+1)+' 0 obj\n'+objs[j]+'\nendobj\n'; }
-  var xrefPos=out.length;
-  out+='xref\n0 '+(objs.length+1)+'\n0000000000 65535 f \n';
-  for(var k=0;k<offsets.length;k++){ var so=('0000000000'+offsets[k]).slice(-10); out+=so+' 00000 n \n'; }
-  out+='trailer\n<</Size '+(objs.length+1)+'/Root 1 0 R>>\nstartxref\n'+xrefPos+'\n%%EOF';
-  return new Blob([out],{type:'application/pdf'});
-}
-function pdfLines(r){ return ['Zerolyn - Payment receipt','','Status:  Confirmed on Stellar Testnet','From:    '+r.from,'To:      '+r.to,'Amount:  '+r.amount+' '+r.code,'Memo:    '+(r.memo||'-'),'Tx hash: '+r.hash,'Time:    '+r.time,'','Verify:  '+explorerTx(r.hash),'','Network: Stellar Testnet']; }
-function downloadPDF(){ if(!lastReceipt){ toast(t('send_fail'),'err'); return; } try{ var blob=buildPDF(pdfLines(lastReceipt)); var url=URL.createObjectURL(blob); var a=document.createElement('a'); a.href=url; a.download='zerolyn-receipt-'+(lastReceipt.hash||'tx').slice(0,10)+'.pdf'; document.body.appendChild(a); a.click(); document.body.removeChild(a); setTimeout(function(){URL.revokeObjectURL(url);},2000); S.click&&S.click(); }catch(e){ toast(t('send_fail'),'err'); } }
-
-/* ---------- init + wiring ---------- */
-var inited=false;
-function init(){
-  var sel=$('asset'); if(sel){ sel.innerHTML=''; ASSETS.forEach(function(a){ var o=document.createElement('option'); o.value=a.code; o.textContent=a.code+(a.issuer?'':' (native)'); sel.appendChild(o); }); }
-  buildPipe(); renderWallet();
-  var wb=$('wbtn'); if(wb) wb.addEventListener('click',function(){ if(Wallet.address){ Wallet.disconnect(); renderWallet(); } else { Wallet.connect().then(renderWallet); } });
-  var sb=$('sendbtn'); if(sb) sb.addEventListener('click',doSend);
-  var qb=$('qrbtn'); if(qb) qb.addEventListener('click',doQR);
-  var db=$('discbtn'); if(db) db.addEventListener('click',doDisc);
-  var pb=$('pdfbtn'); if(pb) pb.addEventListener('click',downloadPDF);
-  var ab=$('againbtn'); if(ab) ab.addEventListener('click',reset);
-  var rc=$('rcpt'); if(rc) rc.addEventListener('input',validateRcptUI);
-  var as=$('asset'); if(as) as.addEventListener('change',fetchBalances);
-  document.addEventListener('visibilitychange',function(){ if(!document.hidden && Wallet.address) fetchBalances(); });
-  window.addEventListener('focus',function(){ if(Wallet.address) fetchBalances(); });
-  if(!sdk()){ toast(t('sdk_missing'),'err'); }
-}
-function ready(){ if(inited) return; inited=true; init(); }
-window.SP={ ready:ready, onLang:function(){ buildPipe(); renderWallet(); validateRcptUI(); var sb=$('sendbtn'); if(sb&&!busy) sb.textContent=t('send_btn'); } };
-if(document.readyState!=='loading') ready(); else document.addEventListener('DOMContentLoaded',ready);
-})();
+function setWCUri(uri){
+  if(!uri) return;
+  var open=document.getElementById('wm-open');
+  if(open){ open.onclick=function(){ try{ window.location.href=uri; }catch(_){} }; }
+  var box=document.getElementById('wm-qr');
+  if(box){ box.inner
