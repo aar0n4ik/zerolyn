@@ -2,14 +2,17 @@
    verification by calling the Soroban verifier contract on Stellar Testnet.
 
    - "Generate a real proof" runs snarkjs.groth16.fullProve in your browser over
-     the BLS12-381 demo circuit (artifacts in assets/zk/, built by scripts/setup.sh).
-   - "Verify on-chain" calls verify(proof, public_inputs) on the verifier contract
-     through Soroban RPC simulateTransaction — the BLS12-381 pairing actually runs
-     inside Stellar's host. Optionally records a real on-chain transaction (Freighter).
+     the BLS12-381 compliance+solvency circuit (circuits/transfer.circom,
+     artifacts in assets/zk/, built by scripts/setup.sh). It proves a hidden
+     amount is >=1, <= a hidden balance, and <= a public compliance limit.
+   - "Verify on-chain" calls verify(proof, public_inputs) on the verifier
+     contract through Soroban RPC simulateTransaction — the BLS12-381 pairing
+     actually runs inside Stellar's host. Optionally records a real on-chain
+     transaction (Freighter).
 
    NOTE: this lights up once the BLS12-381 verifier from this repo is built &
-   deployed (scripts/setup.sh + scripts/deploy.sh) and CONFIG.verifierContractId
-   points at it. Until then the contract call will report a verification failure. */
+   deployed (scripts/setup.sh + set_vk) and CONFIG.verifierContractId points at
+   it. Until then the contract call will report a verification failure. */
 (function(){
 'use strict';
 var CFG=window.SP_CONFIG||{}, toast=window.SP_toast, shorten=window.SP_shorten, Wallet=window.SP_Wallet, sleep=window.SP_sleep, S_=window.SP_Sound||{success:function(){},error:function(){},soft:function(){},click:function(){}};
@@ -23,8 +26,8 @@ var G2ORDER=CFG.g2Order||'c0c1';
 
 /* ---- accurate i18n (runs after app.js, so it wins) ---- */
 (function(){ if(!window.I18N) return; function M(l,o){ window.I18N[l]=Object.assign(window.I18N[l]||{},o); }
-  M('en',{ver_lead:'Generate a real zero-knowledge proof in your browser, then verify it ON-CHAIN by calling our Soroban verifier contract on Stellar Testnet — the BLS12-381 pairing runs inside Stellar’s host.',ver_input:'Proof JSON — snarkjs output: { "proof": …, "publicSignals": … }',ver_gen:'Generate a real proof',ver_btn:'Verify on-chain',ver_btn_busy:'Calling contract…',ver_gen_busy:'Proving in browser…',ver_local_ok:'Proof JSON parsed · Groth16 / BLS12-381',ver_onchain:'Calling verifier on Stellar Testnet',ver_done:'Proof verified ON-CHAIN by the Soroban contract',ver_failed:'Contract rejected the proof — verification failed',ver_contract:'Verifier contract',ver_tx:'On-chain tx',ver_record:'Record this verification on-chain',ver_recording:'Submitting transaction…',ver_bad_json:'That is not valid JSON.',ver_bad_shape:'Need a snarkjs proof: { proof:{pi_a,pi_b,pi_c}, publicSignals:[…] }.',ver_no_artifacts:'Prover artifacts not found. Run scripts/setup.sh to build assets/zk/demo.wasm + demo_final.zkey, then redeploy. You can still paste a proof JSON below.',ver_sdk:'Stellar SDK not loaded — check your connection and reload.',ver_simerr:'On-chain call failed: '});
-  M('ru',{ver_lead:'Сгенерируйте настоящее zero-knowledge доказательство в браузере и проверьте его ОНЧЕЙН вызовом нашего контракта-верификатора Soroban в Stellar Testnet — спаривание BLS12-381 выполняется в хосте Stellar.',ver_gen:'Сгенерировать настоящее доказательство',ver_btn:'Проверить ончейн',ver_btn_busy:'Вызов контракта…',ver_gen_busy:'Доказываю в браузере…',ver_local_ok:'JSON доказательства разобран · Groth16 / BLS12-381',ver_onchain:'Вызов верификатора в Stellar Testnet',ver_done:'Доказательство проверено ОНЧЕЙН контрактом Soroban',ver_failed:'Контракт отклонил доказательство — проверка не пройдена',ver_contract:'Контракт-верификатор',ver_tx:'Ончейн tx',ver_record:'Записать проверку ончейн',ver_recording:'Отправляю транзакцию…',ver_bad_json:'Это не корректный JSON.',ver_bad_shape:'Нужен snarkjs proof: { proof:{pi_a,pi_b,pi_c}, publicSignals:[…] }.',ver_no_artifacts:'Файлы прувера не найдены. Запустите scripts/setup.sh, чтобы собрать assets/zk/demo.wasm + demo_final.zkey, и передеплойте. Можно вставить JSON доказательства вручную.',ver_sdk:'Stellar SDK не загружен — проверьте соединение и обновите страницу.',ver_simerr:'Ошибка ончейн-вызова: '});
+  M('en',{ver_lead:'Generate a real zero-knowledge proof in your browser — proving a hidden amount is within a public compliance limit and a hidden balance — then verify it ON-CHAIN by calling our Soroban verifier contract on Stellar Testnet, where the BLS12-381 pairing runs inside Stellar\u2019s host.',ver_input:'Proof JSON — snarkjs output: { "proof": \u2026, "publicSignals": \u2026 }',ver_gen:'Generate a real proof',ver_btn:'Verify on-chain',ver_btn_busy:'Calling contract\u2026',ver_gen_busy:'Proving in browser\u2026',ver_local_ok:'Proof JSON parsed \u00b7 Groth16 / BLS12-381',ver_onchain:'Calling verifier on Stellar Testnet',ver_done:'Proof verified ON-CHAIN by the Soroban contract',ver_failed:'Contract rejected the proof — verification failed',ver_contract:'Verifier contract',ver_tx:'On-chain tx',ver_record:'Record this verification on-chain',ver_recording:'Submitting transaction\u2026',ver_bad_json:'That is not valid JSON.',ver_bad_shape:'Need a snarkjs proof: { proof:{pi_a,pi_b,pi_c}, publicSignals:[\u2026] }.',ver_no_artifacts:'Prover artifacts not found. Run scripts/setup.sh to build assets/zk/transfer.wasm + transfer_final.zkey and install the verifying key (set_vk). You can still paste a proof JSON below.',ver_sdk:'Stellar SDK not loaded — check your connection and reload.',ver_simerr:'On-chain call failed: '});
+  M('ru',{ver_lead:'Сгенерируйте настоящее zero-knowledge доказательство в браузере — что скрытая сумма не превышает публичный комплаенс-лимит и скрытый баланс — и проверьте его ОНЧЕЙН вызовом нашего контракта-верификатора Soroban в Stellar Testnet, где спаривание BLS12-381 выполняется в хосте Stellar.',ver_gen:'Сгенерировать настоящее доказательство',ver_btn:'Проверить ончейн',ver_btn_busy:'Вызов контракта\u2026',ver_gen_busy:'Доказываю в браузере\u2026',ver_local_ok:'JSON доказательства разобран \u00b7 Groth16 / BLS12-381',ver_onchain:'Вызов верификатора в Stellar Testnet',ver_done:'Доказательство проверено ОНЧЕЙН контрактом Soroban',ver_failed:'Контракт отклонил доказательство — проверка не пройдена',ver_contract:'Контракт-верификатор',ver_tx:'Ончейн tx',ver_record:'Записать проверку ончейн',ver_recording:'Отправляю транзакцию\u2026',ver_bad_json:'Это не корректный JSON.',ver_bad_shape:'Нужен snarkjs proof: { proof:{pi_a,pi_b,pi_c}, publicSignals:[\u2026] }.',ver_no_artifacts:'Файлы прувера не найдены. Запустите scripts/setup.sh, чтобы собрать assets/zk/transfer.wasm + transfer_final.zkey, и установите ключ (set_vk). Можно вставить JSON доказательства вручную.',ver_sdk:'Stellar SDK не загружен — проверьте соединение и обновите страницу.',ver_simerr:'Ошибка ончейн-вызова: '});
 })();
 
 /* ---- helpers ---- */
@@ -74,8 +77,10 @@ async function genProof(){
   if(!window.snarkjs){ toast(t('ver_sdk'),'err'); return; }
   busy=true; gb.disabled=true; var old=gb.textContent; gb.textContent=t('ver_gen_busy'); clear(); line('mut',t('ver_gen_busy'));
   try{
-    var x=(Math.floor(Math.random()*900)+7).toString();
-    var r=await window.snarkjs.groth16.fullProve({x:x},'assets/zk/demo.wasm','assets/zk/demo_final.zkey');
+    var limit=100000;
+    var amount=Math.floor(Math.random()*90000)+1000;
+    var balance=amount+Math.floor(Math.random()*50000)+1;
+    var r=await window.snarkjs.groth16.fullProve({amount:String(amount),balance:String(balance),limit:String(limit)},'assets/zk/transfer.wasm','assets/zk/transfer_final.zkey');
     $('proof').value=JSON.stringify({proof:r.proof,publicSignals:r.publicSignals},null,2);
     clear(); line('ok','\u2713 '+t('ver_local_ok')); S_.soft();
   }catch(e){

@@ -73,6 +73,19 @@
 </section>
 
 <section class="section">
+  <div class="wrap">
+    <div class="panel">
+      <div class="panel-head"><h3 data-i18n="zk_h">zk_h</h3><span class="tag good" data-i18n="wallet_testnet">wallet_testnet</span></div>
+      <div class="panel-body">
+        <p data-i18n="zk_lead">zk_lead</p>
+        <button class="btn btn-primary btn-lg" id="zkbtn" data-i18n="zk_btn">zk_btn</button>
+        <div class="console" id="zkout" style="display:none"></div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section class="section">
   <div class="wrap grid g2">
     <div class="panel">
       <div class="panel-head"><h3 data-i18n="send_qr_h">send_qr_h</h3></div>
@@ -107,7 +120,9 @@
 <script src="assets/i18n.uk.b.js"></script>
 <script src="assets/app.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/@stellar/stellar-sdk@13.1.0/dist/stellar-sdk.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/snarkjs@0.7.5/build/snarkjs.min.js"></script>
 <script src="https://cdn.jsdelivr.net/gh/davidshimjs/qrcodejs/qrcode.min.js"></script>
 <script src="assets/send.js"></script>
+<script src="assets/sendzk.js"></script>
 </body>
 </html>
