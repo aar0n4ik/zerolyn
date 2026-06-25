@@ -1,3 +1,4 @@
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600&display=swap');
 :root{
   --violet:#2563ff;--violet-600:#1d4ed8;--sky:#38bdf8;--pink:#1e50e0;--mint:#15b88a;--amber:#f5a524;
   --ink:#0b1020;--ink-soft:#36406a;--muted:#6b7396;--line:#e7ebf6;--line-2:#d8def0;
@@ -9,6 +10,7 @@
   --shadow-lg:0 24px 60px rgba(20,50,140,.20);
   --r:18px;--r-sm:12px;--r-lg:26px;--maxw:1140px;
   --font:'Inter',-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Helvetica,Arial,sans-serif;
+  --mono:'JetBrains Mono','SF Mono',ui-monospace,Menlo,Consolas,monospace;
 }
 *{box-sizing:border-box}
 html{scroll-behavior:smooth}
@@ -129,9 +131,9 @@ header.nav{position:sticky;top:0;z-index:50;background:rgba(255,255,255,.86);bac
 .dot.on{background:#0fae82}
 
 /* console / proof output */
-.console{background:#0b1020;color:#cdd6ff;border-radius:14px;padding:16px 18px;font-family:'SF Mono',ui-monospace,Menlo,Consolas,monospace;font-size:13px;line-height:1.7;min-height:120px;white-space:pre-wrap;word-break:break-word}
+.console{background:#0b1020;color:#cdd6ff;border-radius:14px;padding:16px 18px;font-family:var(--mono);font-size:13px;line-height:1.7;min-height:120px;white-space:pre-wrap;word-break:break-word}
 .console .ok{color:#5ce0a8}.console .vi{color:#9fb4ff}.console .sk{color:#6fd3ff}.console .pk{color:#7fa8ff}.console .mut{color:#7e86bf}.console .er{color:#ff8a8a}.console .warn{color:#ffd479}.console .ln{padding:1px 0}.console .link-ext{color:#8fd0ff}
-.codeblock{background:#0b1020;color:#cdd6ff;border-radius:12px;padding:14px;font-family:ui-monospace,Menlo,monospace;font-size:12px;overflow:auto;white-space:pre-wrap;word-break:break-all}
+.codeblock{background:#0b1020;color:#cdd6ff;border-radius:12px;padding:14px;font-family:var(--mono);font-size:12px;overflow:auto;white-space:pre-wrap;word-break:break-all}
 
 .steps{display:flex;flex-direction:column;gap:0}
 .step{display:flex;gap:14px;padding:12px 0;align-items:flex-start;opacity:.45;transition:opacity .3s}
@@ -208,7 +210,7 @@ footer.ft{background:#0b1020;color:#c7cdf2;padding:60px 0 28px;margin-top:40px}
 .notice.good{background:#e8fbf4;border-color:#c5f3e3;color:#0c8f6c}
 .notice .i{flex:none}
 .split{display:grid;grid-template-columns:1.1fr .9fr;gap:26px;align-items:start}
-.mono{font-family:ui-monospace,Menlo,monospace}
+.mono{font-family:var(--mono)}
 .link-ext{color:var(--violet-600);font-weight:700;display:inline-flex;align-items:center;gap:5px}
 .sel-none{user-select:none}
 ul.tight{margin:10px 0;padding-left:20px}
@@ -243,3 +245,14 @@ ul.tight li{margin:4px 0;color:var(--ink-soft);font-size:14.5px}
 .about .lead{margin-bottom:14px}
 .section .center{margin-top:34px}
 .good{color:#0fae82;font-weight:700}
+
+/* ---- panel & section rhythm: more breathing room, less monotony ---- */
+.panel + .panel{margin-top:22px}
+.panel-body > p{margin-bottom:18px}
+.panel-body > p:last-child{margin-bottom:0}
+.panel-body > .console,.panel-body > .codeblock{margin-top:18px}
+.panel-head h3{font-size:17px;letter-spacing:-.01em}
+.panel-body .btn-block{margin-top:4px}
+/* QR / SEP-7: keep the scannable code, hide the raw payment URI so it never overflows */
+.qr-box{word-break:break-all;overflow-wrap:anywhere;max-width:100%}
+#qrhint{display:none}

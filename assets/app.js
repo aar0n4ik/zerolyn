@@ -9,7 +9,7 @@ const CONFIG = {
   explorer:'https://stellar.expert/explorer/testnet',
   sorobanRpc:'https://soroban-testnet.stellar.org',
   networkPassphrase:'Test SDF Network ; September 2008',
-  g2Order:'c0c1',
+  g2Order:'c1c0', // Stellar host serializes BLS12-381 G2 Fp2 as c1||c0 (rs-soroban-sdk crypto/bls12_381)
   // Live Soroban contracts deployed to Stellar Testnet (see README for tx hashes).
   verifierContractId:'CC47UVUPXER6VGOFZJWGIR4DQHMRA426NHLJDBGTPKA5C5HLG3LOB54Y',
   poolContractId:'CDKZPEIVUNGRGIYD6ZT4RWLZBERQX6MUO5FZVIIQP3FRPD67LM624NW3',
