@@ -1,4 +1,4 @@
-/* Zerolyn \u2014 ZK Proof Studio (Liquid Porcelain). Scoped to body.send-lux on verify.html. */
+/* Zerolyn — ZK Proof Studio (Liquid Porcelain). Scoped to body.send-lux on verify.html. */
 .send-lux{
   --st-ink:#1a1d23; --st-soft:#4a5160; --st-mut:#8a8f9c;
   --st-line:rgba(16,24,40,.10); --st-line-soft:rgba(16,24,40,.06);
@@ -90,6 +90,6 @@
 .send-lux .st-adv summary{cursor:pointer;color:var(--st-soft);font-size:13px;font-weight:600;list-style:none;user-select:none}
 .send-lux .st-adv summary::-webkit-details-marker{display:none}
 .send-lux .st-adv summary:before{content:'+';display:inline-block;width:16px;color:var(--st-gold);font-weight:800}
-.send-lux .st-adv[open] summary:before{content:'\u2212'}
+.send-lux .st-adv[open] summary:before{content:'−'}
 .send-lux .st-adv-body{margin-top:14px}
 .send-lux .st-adv-head{display:flex;justify-content:flex-end;margin-bottom:10px}
