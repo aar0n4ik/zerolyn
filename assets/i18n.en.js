@@ -55,7 +55,7 @@ send_receipt:'Compliance receipt',send_rcpt_from:'From',send_rcpt_to:'To',send_r
 send_qr_h:'Request a private payment',send_qr_lead:'Generate a SEP-7 QR code. Anyone can scan it with a Stellar wallet to pay you privately \u2014 no copy-pasting addresses.',send_qr_btn:'Generate QR request',send_qr_hint:'Scan with Freighter or any SEP-7 wallet',
 send_disc_h:'Selective disclosure',send_disc_lead:'Generate a one-time view key. An auditor with this key \u2014 and nobody else \u2014 can decrypt and verify this exact transfer.',send_disc_btn:'Generate view key',send_disc_copy:'Copy view key',send_disc_note:'Hand this to an auditor for provable, scoped disclosure. Without it the transfer stays fully private.',
 copied:'Copied to clipboard',
-stepv_w:'Form private witness',stepv_wd:'amount + recipient stay local',stepv_p:'Generate Groth16 proof',stepv_pd:'bn254 circuit, in-browser',stepv_c:'Verify on Soroban',stepv_cd:'on-chain verifier contract',stepv_s:'Settle shielded transfer',stepv_sd:'Stellar Testnet',
+stepv_w:'Form private witness',stepv_wd:'amount + recipient stay local',stepv_p:'Generate Groth16 proof',stepv_pd:'Groth16 / BLS12-381, in-browser',stepv_c:'Verify on Soroban',stepv_cd:'on-chain verifier contract',stepv_s:'Settle shielded transfer',stepv_sd:'Stellar Testnet',
 /* ===== COMPLIANCE ===== */
 compliance_title:'zk Compliance',
 comp_h:'Compliance without surveillance',comp_lead:'Prove who you are allowed to be \u2014 not who you are. zkKYC lets users prove they passed checks while keeping their identity private.',
@@ -76,7 +76,7 @@ por_reserves:'Reserves commitment',por_liab:'Liabilities commitment',por_btn:'Pr
 verify_title:'Proof Verifier',
 ver_h:'Verify a proof on Stellar',ver_lead:'Paste any Zerolyn zero-knowledge proof. We check it locally for structure, then verify it on-chain with the Soroban verifier contract on Testnet.',
 ver_input:'Proof JSON',ver_load:'Load a sample proof',ver_btn:'Verify proof',ver_btn_busy:'Verifying\u2026',ver_bad_json:'That is not valid JSON.',ver_bad_shape:'Missing Groth16 fields (pi_a, pi_b, pi_c).',
-ver_local_ok:'Structure valid \u00b7 Groth16 / bn254',ver_onchain:'On-chain verification',ver_done:'Proof verified on Stellar Testnet',ver_contract:'Verifier contract',ver_demo:'Demo mode \u2014 deploy the contract and set its id in app.js for live verification.',ver_tx:'Transaction',ver_view:'View on Stellar Expert',
+ver_local_ok:'Structure valid \u00b7 Groth16 / BLS12-381',ver_onchain:'On-chain verification',ver_done:'Proof verified on Stellar Testnet',ver_contract:'Verifier contract',ver_demo:'Demo mode \u2014 deploy the contract and set its id in app.js for live verification.',ver_tx:'Transaction',ver_view:'View on Stellar Expert',
 /* ===== ECOSYSTEM ===== */
 ecosystem_title:'Ecosystem',
 eco_page_h:'Stellar ecosystem & integrations',eco_page_lead:'Zerolyn is built to slot into the rails the Stellar community already trusts. Here is what we use today and what we are integrating next.',
@@ -92,7 +92,7 @@ eco_freighter_d:'The Stellar browser wallet by SDF. Used here to connect and sig
 eco_swk_d:'Stellar Wallets Kit \u2014 one integration for many wallets. Planned.',
 eco_moneygram_d:'MoneyGram Access \u2014 cash-in/cash-out for real-world remittance. Planned.',
 eco_horizon_d:'Stellar Horizon API for account and transaction data.',
-eco_protocol_d:'Protocol 25 \u201cX-Ray\u201d adds BN254 + Poseidon host functions \u2014 fast on-chain ZK.',
+eco_protocol_d:'Protocol 22 adds BLS12-381 + pairing host functions to Soroban \u2014 native on-chain ZK verification on Stellar.',
 eco_sep_d:'SEP-10 auth, SEP-12 KYC, SEP-24/31 transfers \u2014 the standards Zerolyn speaks.',
 eco_anchor_d:'Licensed anchors for regulated fiat on/off ramps. Roadmap partner.',
 eco_x_h:'Why this wins for Stellar',eco_x_lead:'Stellar exists to move money for real people and institutions. The thing standing between Stellar and the next billion dollars of regulated volume is the privacy-versus-compliance gap. Zerolyn closes exactly that gap \u2014 the reason this hackathon exists.'
