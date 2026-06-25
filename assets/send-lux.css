@@ -113,4 +113,51 @@ body.send-lux .step-tx b{display:block;font-size:14.5px;font-weight:600;color:va
 body.send-lux .step-tx span{font-size:12.5px;color:var(--lux-muted)}
 body.send-lux .step.active{background:rgba(255,255,255,.78);border-color:var(--lux-line-2);box-shadow:var(--lux-shadow);transform:translateX(2px)}
 body.send-lux .step.active .step-tx b{color:var(--lux-ink)}
-body.send-lux .step.active .step-ic{background:var(--
+body.send-lux .step.active .step-ic{background:var(--lux-champagne);color:#7c6c46;border-color:transparent;animation:luxPulse 1.5s ease-in-out infinite}
+body.send-lux .step.done .step-tx b{color:var(--lux-ink)}
+body.send-lux .step.done .step-ic{background:var(--lux-charcoal);color:#fff;border-color:transparent}
+body.send-lux .step.fail .step-tx b{color:#d23f57}
+body.send-lux .step.fail .step-ic{background:#fbe9ec;color:#d23f57;border-color:#f3cdd5}
+@keyframes luxPulse{0%,100%{box-shadow:0 0 0 0 rgba(201,168,106,0)}50%{box-shadow:0 0 0 7px rgba(201,168,106,.16)}}
+
+/* Receipt — premium unboxing */
+body.send-lux #receipt{position:relative;overflow:hidden}
+body.send-lux #receipt.lux-pop{animation:luxPop .75s var(--lux-ease)}
+@keyframes luxPop{0%{transform:scale(.975);opacity:0}60%{opacity:1}100%{transform:scale(1);opacity:1}}
+body.send-lux .kv{border-bottom:1px dashed var(--lux-line-2);font-size:14px;padding:10px 0}
+body.send-lux .kv span{color:var(--lux-muted)}
+body.send-lux .kv b{color:var(--lux-ink);font-weight:600}
+body.send-lux .lux-confetti{position:absolute;inset:0;width:100%;height:100%;pointer-events:none;z-index:4}
+
+/* Hero CTA cluster */
+body.send-lux .hero-cta{display:flex;gap:10px;flex-wrap:wrap;margin-top:20px}
+
+/* Console + code: light porcelain, never dark */
+body.send-lux .console,body.send-lux .codeblock{background:rgba(248,249,250,.85);color:#2a2e37;border:1px solid var(--lux-line-2);border-radius:16px;-webkit-backdrop-filter:blur(10px);backdrop-filter:blur(10px)}
+body.send-lux .console .ok{color:#0c8f6c}
+body.send-lux .console .er{color:#d23f57}
+body.send-lux .console .warn{color:#b4791a}
+body.send-lux .console .mut{color:#8a8f9c}
+body.send-lux .console .vi,body.send-lux .console .sk,body.send-lux .console .pk{color:#4a5160}
+body.send-lux .console .link-ext{color:#3b414c}
+
+/* QR */
+body.send-lux .qr-box{background:rgba(255,255,255,.7);border:1px solid var(--lux-line-2);border-radius:18px;-webkit-backdrop-filter:blur(10px);backdrop-filter:blur(10px)}
+
+/* Cinematic reveal */
+body.send-lux .reveal-lux{opacity:0;transform:translateY(18px) scale(.985);filter:blur(8px);transition:opacity .9s var(--lux-ease),transform .9s var(--lux-ease),filter .9s var(--lux-ease)}
+body.send-lux .reveal-lux.in{opacity:1;transform:none;filter:none}
+
+/* Safety net: if JS never runs, reveal content via pure-CSS fallback so the page is never blank */
+@keyframes luxFallbackIn{to{opacity:1;transform:none;filter:none}}
+body.send-lux .reveal-lux{animation:luxFallbackIn .8s var(--lux-ease) 2s forwards}
+body.send-lux .reveal-lux.in{animation:none}
+
+/* Responsive */
+@media(max-width:1024px){body.send-lux .split{grid-template-columns:1fr}}
+@media(max-width:560px){body.send-lux .amount-row{flex-direction:column}body.send-lux .lux-field.asset-sel{width:100%}}
+@media(prefers-reduced-motion:reduce){
+  body.send-lux .reveal-lux{opacity:1!important;transform:none!important;filter:none!important;animation:none!important}
+  body.send-lux .step.active .step-ic{animation:none}
+  body.send-lux .lux-field:focus-within::after{animation:none}
+}
