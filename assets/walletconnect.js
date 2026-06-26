@@ -118,7 +118,15 @@
 
   window.SPWC = {
     // send.js gate: WC() uses this object when ready() is truthy.
-    ready: function () { return true; },
+    // Inside Freighter's own in-app browser (Discover) the page must use the
+    // injected Freighter API directly -- Freighter Mobile sets the marker
+    // window.stellar = { provider: 'freighter', platform: 'mobile' } there.
+    // Running WalletConnect inside the app you are already in cannot pair, so we
+    // return false to make send.js fall through to its Freighter API path.
+    ready: function () {
+      try { if (window.stellar && window.stellar.provider === 'freighter') return false; } catch (_) {}
+      return true;
+    },
     getPublicKey: function () { return address; },
 
     // Build Freighter's deep link from a WC pairing URI (exposed for the page modal).
