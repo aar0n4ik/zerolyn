@@ -1,0 +1,124 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Zerolyn Wallet Diagnostics</title>
+<style>
+  body{font-family:-apple-system,BlinkMacSystemFont,Segoe UI,Roboto,sans-serif;margin:0;padding:16px;background:#0f1422;color:#e6ebf5;line-height:1.5}
+  h1{font-size:18px;margin:0 0 4px}
+  .sub{font-size:12px;color:#8a93a6;margin:0 0 16px}
+  button{display:block;width:100%;padding:13px 16px;margin:8px 0;border:none;border-radius:12px;font-size:15px;font-weight:600;cursor:pointer;box-sizing:border-box}
+  .b1{background:linear-gradient(160deg,#2f7bff,#1d4ed8);color:#fff}
+  .b2{background:linear-gradient(160deg,#16a34a,#15803d);color:#fff}
+  .b3{background:#283047;color:#e6ebf5}
+  pre{white-space:pre-wrap;word-break:break-word;background:#0a0e1a;border:1px solid #283047;border-radius:12px;padding:12px;font-size:12px;max-height:46vh;overflow:auto;margin:12px 0}
+</style>
+</head>
+<body>
+<h1>Zerolyn Wallet Diagnostics</h1>
+<p class="sub">Open this page where it fails (phone browser, Freighter Discover, or desktop). Tap the buttons, then tap "Copy report" and send it back.</p>
+<button class="b2" id="t-api">1. Test Freighter API (direct)</button>
+<button class="b1" id="t-wc">2. Test WalletConnect</button>
+<button class="b3" id="t-copy">Copy report</button>
+<pre id="log"></pre>
+
+<script src="https://cdn.jsdelivr.net/gh/davidshimjs/qrcodejs/qrcode.min.js"></script>
+<script src="https://unpkg.com/@stellar/freighter-api@6.0.1/build/index.min.js"></script>
+<script src="assets/walletconnect.js"></script>
+<script>
+(function(){
+  var logEl=document.getElementById('log');
+  var lines=[];
+  function log(s){ lines.push(s); logEl.textContent=lines.join('\n'); }
+  function j(v){ try{ return JSON.stringify(v); }catch(e){ return String(v); } }
+  function methodsOf(o){
+    if(!o||(typeof o!=='object'&&typeof o!=='function')) return '(none)';
+    var out=[]; for(var k in o){ try{ out.push(k+':'+(typeof o[k])); }catch(e){ out.push(k+':?'); } }
+    return out.length?out.join(', '):'(no enumerable keys)';
+  }
+
+  window.addEventListener('error',function(e){ log('[window.error] '+(e.message||e)+' @ '+(e.filename||'')+':'+(e.lineno||'')); });
+  window.addEventListener('unhandledrejection',function(e){ var r=e.reason; log('[unhandledrejection] '+(r&&r.message?r.message:j(r))); });
+
+  // ---- Environment dump ----
+  log('=== ENVIRONMENT ===');
+  log('time: '+new Date().toISOString());
+  log('href: '+location.href);
+  log('origin: '+location.origin);
+  log('lang: '+(navigator.language||''));
+  log('userAgent: '+(navigator.userAgent||''));
+  log('window.stellar: '+j(window.stellar));
+  log('typeof freighterApi: '+typeof window.freighterApi);
+  log('freighterApi keys: '+methodsOf(window.freighterApi));
+  log('typeof window.freighter: '+typeof window.freighter);
+  log('typeof SPWC: '+typeof window.SPWC);
+  try{ log('SPWC.ready(): '+(window.SPWC&&window.SPWC.ready&&window.SPWC.ready())); }catch(e){ log('SPWC.ready() threw: '+e.message); }
+  log('');
+
+  function api(){ return window.freighterApi || (window.freighter && window.freighter.api) || null; }
+
+  // ---- Test 1: Freighter API (used in Discover + desktop extension) ----
+  document.getElementById('t-api').addEventListener('click', async function(){
+    log('=== TEST 1: FREIGHTER API ===');
+    var a=api();
+    if(!a){ log('RESULT: window.freighterApi is NOT available here. Direct API path cannot work; this env needs WalletConnect.'); log(''); return; }
+    log('freighterApi present. methods: '+methodsOf(a));
+    try{ if(a.isConnected){ log('isConnected(): '+j(await a.isConnected())); } }catch(e){ log('isConnected() ERROR: '+(e&&e.message||e)); }
+    try{ if(a.isAllowed){ log('isAllowed(): '+j(await a.isAllowed())); } }catch(e){ log('isAllowed() ERROR: '+(e&&e.message||e)); }
+    try{
+      if(a.setAllowed){ log('calling setAllowed()...'); log('setAllowed(): '+j(await a.setAllowed())); }
+      else if(a.requestAccess){ log('calling requestAccess()...'); log('requestAccess(): '+j(await a.requestAccess())); }
+      else { log('no setAllowed/requestAccess method'); }
+    }catch(e){ log('access request ERROR: '+(e&&e.message||e)); }
+    try{
+      var pk=null;
+      if(a.getAddress){ var r=await a.getAddress(); pk=r&&(r.address||r); log('getAddress(): '+j(r)); }
+      else if(a.getPublicKey){ pk=await a.getPublicKey(); log('getPublicKey(): '+j(pk)); }
+      log('=> ADDRESS: '+pk);
+    }catch(e){ log('getAddress ERROR: '+(e&&e.message||e)); }
+    try{
+      if(a.getNetworkDetails){ log('getNetworkDetails(): '+j(await a.getNetworkDetails())); }
+      else if(a.getNetwork){ log('getNetwork(): '+j(await a.getNetwork())); }
+    }catch(e){ log('network ERROR: '+(e&&e.message||e)); }
+    log('');
+  });
+
+  // ---- Test 2: WalletConnect (used in a plain mobile browser) ----
+  document.getElementById('t-wc').addEventListener('click', function(){
+    log('=== TEST 2: WALLETCONNECT ===');
+    if(!window.SPWC || !window.SPWC.connect){ log('SPWC.connect not available - walletconnect.js failed to load.'); log(''); return; }
+    var gotUri=false;
+    var to=setTimeout(function(){ if(!gotUri) log('WARNING: no display_uri after 12s. The WalletConnect provider likely failed to init or could not reach the relay (check projectId / Allowed Domains / network).'); }, 12000);
+    log('calling SPWC.connect()... (a pairing URI should appear; on phone it tries to open Freighter)');
+    try{
+      window.SPWC.connect(function(uri){
+        gotUri=true; clearTimeout(to);
+        log('display_uri RECEIVED:');
+        log(uri);
+        try{ log('freighter deep link: '+(window.SPWC.deepLink?window.SPWC.deepLink(uri):'(n/a)')); }catch(e){}
+      }).then(function(addr){
+        log('=> WC CONNECTED ADDRESS: '+addr);
+        log('');
+      }).catch(function(e){
+        clearTimeout(to);
+        log('WC connect ERROR: '+(e&&e.message||j(e)));
+        log('');
+      });
+    }catch(e){ clearTimeout(to); log('WC connect THREW: '+(e&&e.message||e)); log(''); }
+  });
+
+  // ---- Copy ----
+  document.getElementById('t-copy').addEventListener('click', function(){
+    var txt=lines.join('\n');
+    function ok(){ var b=document.getElementById('t-copy'); b.textContent='Copied!'; setTimeout(function(){ b.textContent='Copy report'; }, 1500); }
+    function fallback(){ var ta=document.createElement('textarea'); ta.value=txt; document.body.appendChild(ta); ta.select(); try{ document.execCommand('copy'); ok(); }catch(_){ } document.body.removeChild(ta); }
+    try{
+      if(navigator.clipboard&&navigator.clipboard.writeText){ navigator.clipboard.writeText(txt).then(ok,fallback); }
+      else fallback();
+    }catch(e){ fallback(); }
+  });
+})();
+</script>
+</body>
+</html>
