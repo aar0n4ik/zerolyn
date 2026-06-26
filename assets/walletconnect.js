@@ -1,14 +1,14 @@
 /* Zerolyn - assets/walletconnect.js
    Defines window.SPWC: Freighter Mobile connection via WalletConnect v2 / Reown.
-   Uses the official Reown AppKit modal (per Freighter's dApp docs) so the wallet
-   is opened and paired through Freighter's exact registry deep link -- in a phone
-   browser, inside Freighter's in-app Discover browser, and via QR on desktop. If
-   AppKit cannot be loaded, it falls back to the manual deep link + copy/paste URI.
+   Uses the official Reown AppKit modal (per Freighter's dApp docs). Freighter is
+   pinned into AppKit's featured row via its WalletConnect Explorer id, so it
+   actually appears in the wallet list and AppKit opens + pairs it through the
+   exact registry deep link -- in a phone browser, inside Freighter's Discover
+   browser, and via QR on desktop. If AppKit cannot load, falls back to a manual
+   deep link + copy/paste URI.
 
    send.js gate: WC() uses this object when window.SPWC.ready() is truthy, then
    Wallet.connect() drives it and feeds the pairing URI to setWCUri().
-
-   Project ID: created at https://dashboard.reown.com (Reown / WalletConnect Cloud).
 */
 (function () {
   'use strict';
@@ -20,11 +20,13 @@
   var CHAIN_PUBNET  = 'stellar:pubnet';
   var METHODS = ['stellar_signXDR', 'stellar_signAndSubmitXDR'];
   var UP_CDN  = 'https://esm.sh/@walletconnect/universal-provider@2.17.2';
-  // Official Reown AppKit modal (per Freighter dApp docs). It knows Freighter's
-  // registry deep link, so it opens + pairs the wallet correctly on a phone
-  // browser, inside Freighter Discover, and via QR on desktop.
+  // Official Reown AppKit modal (per Freighter dApp docs).
   var APPKIT_CDN     = 'https://esm.sh/@reown/appkit@1/core';
   var APPKIT_NET_CDN = 'https://esm.sh/@reown/appkit@1/networks';
+  // Freighter's PUBLIC WalletConnect Explorer (WalletGuide) id. Pinning it into
+  // featuredWalletIds is what makes Freighter actually show up in AppKit's wallet
+  // list -- without it the modal only renders generic wallets and "none are there".
+  var FREIGHTER_WALLET_ID = '997a355c8f682468706a76cff1b004a7115f505fb962dac54b6e9b442dd1c380';
 
   var provider = null, modal = null, session = null, address = null, initing = null, uriCb = null, connectedChain = null;
 
@@ -38,8 +40,8 @@
     };
   }
   function isMobile() { return /Android|iPhone|iPad|iPod|Mobile/i.test(navigator.userAgent || ''); }
-  // Production Freighter Mobile (org.stellar.freighterwallet) registers the custom
-  // scheme "freighterwallet". Used only by the no-AppKit fallback path below.
+  // Production Freighter Mobile registers the custom scheme "freighterwallet".
+  // Used only by the no-AppKit fallback path below.
   var FREIGHTER_SCHEME = 'freighterwallet';
   function freighterLink(uri) { return FREIGHTER_SCHEME + '://wc?uri=' + encodeURIComponent(uri); }
 
@@ -99,8 +101,7 @@
     };
     return m[l] || m.en;
   }
-  // Self-contained floating toast (the page modal closes right after connect, so a
-  // modal banner would not survive). Used to flag a wrong-network connection.
+  // Self-contained floating toast (the page modal closes right after connect).
   function warnWrongNetwork() {
     try {
       var d = document.createElement('div');
@@ -111,16 +112,19 @@
     } catch (_) {}
   }
 
-  // Hide send.js's own pairing modal when the AppKit modal is used instead.
+  // Show/hide send.js's own pairing modal. When AppKit is used we hide the native
+  // modal so there is a single, instant prompt (no confusing double window).
   function hideNativeModal() {
     try { var b = document.getElementById('wm-backdrop'); if (b) b.style.display = 'none'; } catch (_) {}
   }
+  function showNativeModal() {
+    try { var b = document.getElementById('wm-backdrop'); if (b) b.style.display = ''; } catch (_) {}
+  }
 
   // Load the Reown AppKit modal and bind it to our UniversalProvider. AppKit
-  // renders the QR + wallet list and opens Freighter through the exact deep link
-  // from the WalletConnect registry (which our manual freighterwallet:// link
-  // could not reliably reproduce). Best-effort: on any failure we leave
-  // modal = null and fall back to the copy/paste URI flow.
+  // renders the QR + featured wallet list (Freighter pinned first) and opens
+  // Freighter through its exact registry deep link. Best-effort: on any failure
+  // we leave modal = null and fall back to the copy/paste URI flow.
   function loadModal(p) {
     return Promise.all([import(APPKIT_CDN), import(APPKIT_NET_CDN)]).then(function (m) {
       var mod = m[0] || {}, nets = m[1] || {};
@@ -132,6 +136,7 @@
         networks: [mainnet],
         universalProvider: p,
         manualWCControl: true,
+        featuredWalletIds: [FREIGHTER_WALLET_ID],
         metadata: meta(),
         features: { analytics: false }
       });
@@ -139,7 +144,7 @@
     }).catch(function () { modal = null; return null; });
   }
 
-  // Lazily load and initialize the WalletConnect UniversalProvider.
+  // Lazily load and initialize the WalletConnect UniversalProvider (+ AppKit modal).
   function ensure() {
     if (provider) return Promise.resolve(provider);
     if (initing) return initing;
@@ -151,9 +156,8 @@
       // The relay emits the pairing URI here. Always feed it to send.js (uriCb).
       p.on('display_uri', function (uri) {
         if (typeof uriCb === 'function') { try { uriCb(uri); } catch (_) {} }
-        // When AppKit is active it renders the QR + wallet list and opens
-        // Freighter via its registry deep link, so we must NOT navigate away
-        // ourselves (that races AppKit / lands on the wrong app). The block
+        // When AppKit is active it renders the QR + wallet list and opens Freighter
+        // itself, so we must NOT navigate away (that races AppKit). Everything
         // below is only the no-AppKit fallback.
         if (modal) return;
         var dl = freighterLink(uri);
@@ -171,37 +175,36 @@
   }
 
   window.SPWC = {
-    // send.js gate: WC() uses this object when ready() is truthy. Always use
-    // WalletConnect on mobile, INCLUDING inside Freighter's Discover browser:
-    // Discover only injects a detection marker (window.stellar), not a signing
-    // API, so the WC pairing deep link -- which Discover intercepts and routes to
-    // its native WalletKit -- is the only path that actually connects. Desktop is
-    // gated by `mob` in send.js, so this does not change desktop behavior.
+    // Always use WalletConnect on mobile, INCLUDING inside Freighter's Discover
+    // browser (Discover only injects a detection marker, not a signing API, so
+    // the WC pairing is the only path that connects). Desktop is gated by `mob`
+    // in send.js, so this does not change desktop behavior.
     ready: function () { return true; },
     getPublicKey: function () { return address; },
-    // The CAIP-2 chain the wallet connected on (e.g. 'stellar:testnet'). null until connected.
     network: function () { return connectedChain; },
 
-    // Build Freighter's deep link from a WC pairing URI (exposed for the page modal).
     deepLink: function (uri) { return freighterLink(uri); },
 
-    // onUri (optional): send.js passes its internal setWCUri so the modal can show
-    // the "Open in Freighter" deep link + QR. Returns the connected G... address.
+    // onUri (optional): send.js passes setWCUri. Returns the connected G... address.
     connect: function (onUri) {
       uriCb = onUri || null;
+      // If the modal is already warmed up, drop the native prompt immediately so
+      // there is no double window.
+      if (modal) { hideNativeModal(); }
       return ensure().then(function (p) {
         if (address) return address;
-        // Prefer the official AppKit modal (correct Freighter deep link). If it
-        // failed to load, hideNativeModal is a no-op and send.js's modal + the
-        // copy-URI fallback remain on screen.
-        if (modal) { hideNativeModal(); try { modal.open(); } catch (_) {} }
-        // Request BOTH Stellar networks as OPTIONAL namespaces. Freighter rejects a
-        // connection outright when the dApp's REQUIRED chain differs from the wallet's
-        // active network (see approveSessionProposal: it returns a "wrong network"
-        // error if the active chain is not in the proposal). Asking for a single
-        // required testnet chain therefore fails whenever the user's Freighter is on
-        // Mainnet. Optional namespaces let the wallet approve on whichever network it
-        // is on; we then detect it and warn if it is not Testnet (this app is testnet-only).
+        if (modal) {
+          // Official flow: open the AppKit modal, then start pairing. AppKit shows
+          // a spinner, then the QR + featured wallet list with Freighter first.
+          hideNativeModal();
+          try { modal.open(); } catch (_) {}
+        }
+        // else: AppKit unavailable -> the native modal + manual deep link / copy
+        // fallback (wired in display_uri) stay on screen.
+        // Request BOTH Stellar networks as OPTIONAL namespaces so Freighter can
+        // approve on whichever network it is on (a single REQUIRED testnet chain
+        // is rejected outright when the wallet is on Mainnet). We then detect the
+        // approved network and warn if it is not Testnet (this app is testnet-only).
         return p.connect({
           optionalNamespaces: { stellar: { chains: [CHAIN_PUBNET, CHAIN_TESTNET], methods: METHODS, events: [] } }
         }).then(function (sess) {
@@ -211,19 +214,18 @@
           return address;
         }, function (err) {
           try { if (modal) modal.close(); } catch (_) {}
+          showNativeModal();
           throw err;
         });
       });
     },
 
-    // Ask Freighter Mobile to sign an XDR; returns the signed XDR string.
     signXDR: function (xdr) {
       return ensure().then(function (p) {
         return p.request({ chainId: CHAIN, request: { method: 'stellar_signXDR', params: { xdr: xdr } } }, CHAIN);
       }).then(function (res) { return (res && (res.signedXDR || res.signedXdr)) || res || xdr; });
     },
 
-    // Sign and submit in one step (alternative path).
     signAndSubmitXDR: function (xdr) {
       return ensure().then(function (p) {
         return p.request({ chainId: CHAIN, request: { method: 'stellar_signAndSubmitXDR', params: { xdr: xdr } } }, CHAIN);
@@ -236,4 +238,9 @@
       return Promise.resolve().then(function () { if (provider.session) return provider.disconnect(); }).catch(function () {});
     }
   };
+
+  // Warm up the provider + AppKit modal on mobile as soon as the page loads, so
+  // the first "Connect" tap opens the modal instantly instead of after a multi-
+  // second SDK download (the cause of the "native prompt, then 5s, then WC" lag).
+  if (isMobile()) { try { ensure().catch(function () {}); } catch (_) {} }
 })();
