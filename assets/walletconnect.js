@@ -177,7 +177,6 @@
           if (openBtn) openBtn.onclick = function () { try { window.location.href = dl; } catch (_) {} };
         } catch (_) {}
         injectCopyButton(uri);
-        if (isMobile()) { try { window.location.href = dl; } catch (_) {} }
       });
       if (p.session) { session = p.session; address = addrOf(session); connectedChain = chainOf(session); }
       return loadModal(p).then(function () { return p; });
@@ -199,19 +198,30 @@
     // onUri (optional): send.js passes setWCUri. Returns the connected G... address.
     connect: function (onUri) {
       uriCb = onUri || null;
-      // If the modal is already warmed up, drop the native prompt immediately so
-      // there is no double window.
-      if (modal) { hideNativeModal(); }
+      // Drop send.js's native spinner/confirm modal immediately, so the only
+      // prompt the user ever sees is the AppKit wallet sheet -- no confusing
+      // double window and no spinner appearing before the real chooser.
+      hideNativeModal();
       return ensure().then(function (p) {
+        if (address) return address;
+        // If warm-up could not build the AppKit modal (slow/failed CDN import),
+        // try once more right now so we still open the proper wallet sheet
+        // instead of silently dropping to the manual fallback.
+        if (!modal) { return loadModal(p).then(function () { return p; }); }
+        return p;
+      }).then(function (p) {
         if (address) return address;
         if (modal) {
           // Official flow: open the AppKit modal, then start pairing. AppKit shows
-          // a spinner, then the QR + featured wallet list with Freighter first.
+          // the QR + featured wallet list with Freighter (and only Freighter).
           hideNativeModal();
           try { modal.open(); } catch (_) {}
+        } else {
+          // True fallback (AppKit unavailable): show the native sheet with a
+          // manual "Open in Freighter" button + QR. We NEVER auto-redirect --
+          // auto-open is what launched the app before any prompt appeared.
+          showNativeModal();
         }
-        // else: AppKit unavailable -> the native modal + manual deep link / copy
-        // fallback (wired in display_uri) stay on screen.
         // Request BOTH Stellar networks as OPTIONAL namespaces so Freighter can
         // approve on whichever network it is on (a single REQUIRED testnet chain
         // is rejected outright when the wallet is on Mainnet). We then detect the
