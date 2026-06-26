@@ -195,7 +195,7 @@ const Wallet={ address:null, connecting:false, demo:false,
 window.SP_Wallet=Wallet;
 
 /* ---------------- QR (SEP-7) ---------------- */
-function sep7(dest,amount,asset,memo){ let u='web+stellar:pay?destination='+encodeURIComponent(dest); if(amount) u+='&amount='+encodeURIComponent(amount); if(asset&&asset!=='XLM') u+='&asset_code='+encodeURIComponent(asset); if(memo) u+='&memo='+encodeURIComponent(memo); return u; }
+function sep7(dest,amount,asset,memo,issuer){ let u='web+stellar:pay?destination='+encodeURIComponent(dest); if(amount) u+='&amount='+encodeURIComponent(amount); if(asset&&asset!=='XLM'){ u+='&asset_code='+encodeURIComponent(asset); if(issuer&&issuer!=='native') u+='&asset_issuer='+encodeURIComponent(issuer); } if(memo){ u+='&memo='+encodeURIComponent(memo)+'&memo_type=MEMO_TEXT'; } u+='&network_passphrase='+encodeURIComponent(CONFIG.networkPassphrase); return u; }
 function renderQR(el,text){ el.innerHTML=''; if(window.QRCode){ try{ new window.QRCode(el,{text:text,width:180,height:180,colorDark:'#0b1020',colorLight:'#ffffff',correctLevel:window.QRCode.CorrectLevel.M}); return true;}catch(e){} } const img=document.createElement('img'); img.alt='QR'; img.width=180;img.height=180; img.src='https://api.qrserver.com/v1/create-qr-code/?size=180x180&data='+encodeURIComponent(text); el.appendChild(img); return true; }
 window.SP_QR={sep7,renderQR};
 
