@@ -1,4 +1,4 @@
-/* Zerolyn — assets/walletconnect.js
+/* Zerolyn - assets/walletconnect.js
    Defines window.SPWC: Freighter Mobile connection via WalletConnect v2 / Reown.
    On phones it auto-opens the Freighter app (deep link) so the user can link this
    page in one tap (like Trust Wallet); on desktop/other devices the existing modal
@@ -32,6 +32,12 @@
     };
   }
   function isMobile() { return /Android|iPhone|iPad|iPod|Mobile/i.test(navigator.userAgent || ''); }
+  // Production Freighter Mobile (org.stellar.freighterwallet) registers the custom
+  // scheme "freighterwallet" on both iOS and Android. Wrapping the WalletConnect
+  // pairing URI in Freighter's own deep link opens Freighter specifically, instead
+  // of letting the OS route the bare wc: URI to its default handler (Trust Wallet).
+  var FREIGHTER_SCHEME = 'freighterwallet';
+  function freighterLink(uri) { return FREIGHTER_SCHEME + '://wc?uri=' + encodeURIComponent(uri); }
   function addrOf(sess) {
     try { return sess.namespaces.stellar.accounts[0].split(':').pop(); } catch (_) { return null; }
   }
@@ -49,7 +55,15 @@
       // on phones, navigate to it so the OS opens Freighter automatically.
       p.on('display_uri', function (uri) {
         if (typeof uriCb === 'function') { try { uriCb(uri); } catch (_) {} }
-        if (isMobile()) { try { window.location.href = uri; } catch (_) {} }
+        var dl = freighterLink(uri);
+        // Force the modal's "Open in Freighter" button to use Freighter's deep link
+        // (setWCUri set it to the bare wc: URI, which phones hand to Trust Wallet).
+        try {
+          var openBtn = document.getElementById('wm-open');
+          if (openBtn) openBtn.onclick = function () { try { window.location.href = dl; } catch (_) {} };
+        } catch (_) {}
+        // On phones, auto-open Freighter via its deep link (not the bare wc: URI).
+        if (isMobile()) { try { window.location.href = dl; } catch (_) {} }
       });
       if (p.session) { session = p.session; address = addrOf(session); }
       return p;
@@ -61,6 +75,9 @@
     // send.js gate: WC() uses this object when ready() is truthy.
     ready: function () { return true; },
     getPublicKey: function () { return address; },
+
+    // Build Freighter's deep link from a WC pairing URI (exposed for the page modal).
+    deepLink: function (uri) { return freighterLink(uri); },
 
     // onUri (optional): send.js passes its internal setWCUri so the modal can show
     // the "Open in Freighter" deep link + QR. Returns the connected G... address.
