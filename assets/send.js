@@ -23,7 +23,7 @@ function tt(k,f){ var v=t(k); return (v&&v!==k)?v:f; }
     send_need_wallet:'Connect a wallet first.',send_need_valid:'Enter a valid recipient address.',send_need_amount:'Enter an amount greater than zero.',
     wallet_no_freighter:'Freighter wallet not found.',wallet_wrong_net:'Switch Freighter to Stellar Testnet.',wallet_rejected:'Connection cancelled.',
     wm_pc_t:'Connect on desktop',
-    wm_pc_b:'Install the <a href=\"https://www.freighter.app/\" target=\"_blank\" rel=\"noopener\">Freighter</a> browser extension, unlock it and pick your account, then press “Connect wallet” here.',
+    wm_pc_b:'Install the <a href="https://www.freighter.app/" target="_blank" rel="noopener">Freighter</a> browser extension, unlock it and pick your account, then press “Connect wallet” here.',
     wm_pc_cta:'Get Freighter extension',
     wm_mob_t:'Connect on phone',
     wm_mob_b:'Tap “Connect wallet” to open the Freighter app on your phone and approve linking this page.',
@@ -109,7 +109,7 @@ function tt(k,f){ var v=t(k); return (v&&v!==k)?v:f; }
     send_need_wallet:'Сначала подключите кошелёк.',send_need_valid:'Введите корректный адрес получателя.',send_need_amount:'Введите сумму больше нуля.',
     wallet_no_freighter:'Кошелёк Freighter не найден.',wallet_wrong_net:'Переключите Freighter на Stellar Testnet.',wallet_rejected:'Подключение отменено.',
     wm_pc_t:'Подключение на компьютере',
-    wm_pc_b:'Установите расширение <a href=\"https://www.freighter.app/\" target=\"_blank\" rel=\"noopener\">Freighter</a> для браузера, разблокируйте его и выберите аккаунт, затем нажмите «Подключить кошелёк» здесь.',
+    wm_pc_b:'Установите расширение <a href="https://www.freighter.app/" target="_blank" rel="noopener">Freighter</a> для браузера, разблокируйте его и выберите аккаунт, затем нажмите «Подключить кошелёк» здесь.',
     wm_pc_cta:'Установить Freighter',
     wm_mob_t:'Подключение на телефоне',
     wm_mob_b:'Нажмите «Подключить кошелёк», чтобы открыть приложение Freighter на телефоне и подтвердить привязку этой страницы.',
@@ -228,12 +228,12 @@ function showWalletModal(){
   var bd=document.createElement('div'); bd.id='wm-backdrop'; bd.className='wm-backdrop';
   var card=document.createElement('div'); card.className='wm-card';
   var html='';
-  html+='<button class=\"wm-x\" type=\"button\" aria-label=\"'+tt('wm_close','Close')+'\">×</button>';
-  html+='<div class=\"wm-ic\">'+(mob?WM_ICON_PHONE:WM_ICON_DESK)+'</div>';
-  html+='<h3 class=\"wm-t\">'+(mob?t('wm_mob_t'):t('wm_pc_t'))+'</h3>';
-  html+='<div class=\"wm-b\">'+(mob?t('wm_mob_b'):t('wm_pc_b'))+'</div>';
-  if(mob){ html+='<button class=\"wm-cta\" type=\"button\" id=\"wm-retry\">'+tt('wallet_connect','Connect wallet')+'</button>'; }
-  else { html+='<a class=\"wm-cta\" href=\"https://www.freighter.app/\" target=\"_blank\" rel=\"noopener\">'+t('wm_pc_cta')+'</a><button class=\"wm-retry\" type=\"button\" id=\"wm-retry\">'+tt('wallet_connect','Connect wallet')+'</button>'; }
+  html+='<button class="wm-x" type="button" aria-label="'+tt('wm_close','Close')+'">×</button>';
+  html+='<div class="wm-ic">'+(mob?WM_ICON_PHONE:WM_ICON_DESK)+'</div>';
+  html+='<h3 class="wm-t">'+(mob?t('wm_mob_t'):t('wm_pc_t'))+'</h3>';
+  html+='<div class="wm-b">'+(mob?t('wm_mob_b'):t('wm_pc_b'))+'</div>';
+  if(mob){ html+='<button class="wm-cta" type="button" id="wm-retry">'+tt('wallet_connect','Connect wallet')+'</button>'; }
+  else { html+='<a class="wm-cta" href="https://www.freighter.app/" target="_blank" rel="noopener">'+t('wm_pc_cta')+'</a><button class="wm-retry" type="button" id="wm-retry">'+tt('wallet_connect','Connect wallet')+'</button>'; }
   card.innerHTML=html; bd.appendChild(card); document.body.appendChild(bd);
   bd.addEventListener('click',function(e){ if(e.target===bd) closeWalletModal(); });
   var x=card.querySelector('.wm-x'); if(x) x.addEventListener('click',closeWalletModal);
@@ -244,13 +244,13 @@ function showWCConnecting(){
   var bd=document.createElement('div'); bd.id='wm-backdrop'; bd.className='wm-backdrop';
   var card=document.createElement('div'); card.className='wm-card';
   var html='';
-  html+='<button class=\"wm-x\" type=\"button\" aria-label=\"'+tt('wm_close','Close')+'\">×</button>';
-  html+='<div class=\"wm-spin\"></div>';
-  html+='<h3 class=\"wm-t\">'+tt('wc_connecting_t','Connect Freighter')+'</h3>';
-  html+='<div class=\"wm-b\">'+tt('wc_connecting_b','Approve the connection request in your Freighter app to link this page.')+'</div>';
-  html+='<button class=\"wm-cta\" type=\"button\" id=\"wm-open\">'+tt('wc_open','Open in Freighter')+'</button>';
-  html+='<div class=\"wm-or\">'+tt('wc_scan','Or scan with Freighter on another device')+'</div>';
-  html+='<div class=\"wm-qr\" id=\"wm-qr\"></div>';
+  html+='<button class="wm-x" type="button" aria-label="'+tt('wm_close','Close')+'">×</button>';
+  html+='<div class="wm-spin"></div>';
+  html+='<h3 class="wm-t">'+tt('wc_connecting_t','Connect Freighter')+'</h3>';
+  html+='<div class="wm-b">'+tt('wc_connecting_b','Approve the connection request in your Freighter app to link this page.')+'</div>';
+  html+='<button class="wm-cta" type="button" id="wm-open">'+tt('wc_open','Open in Freighter')+'</button>';
+  html+='<div class="wm-or">'+tt('wc_scan','Or scan with Freighter on another device')+'</div>';
+  html+='<div class="wm-qr" id="wm-qr"></div>';
   card.innerHTML=html; bd.appendChild(card); document.body.appendChild(bd);
   bd.addEventListener('click',function(e){ if(e.target===bd){ closeWalletModal(); try{ if(window.SPWC) window.SPWC.disconnect(); }catch(_){} } });
   var x=card.querySelector('.wm-x'); if(x) x.addEventListener('click',function(){ closeWalletModal(); try{ if(window.SPWC) window.SPWC.disconnect(); }catch(_){} });
@@ -267,11 +267,11 @@ function showWCFailed(){
   var bd=document.createElement('div'); bd.id='wm-backdrop'; bd.className='wm-backdrop';
   var card=document.createElement('div'); card.className='wm-card';
   var html='';
-  html+='<button class=\"wm-x\" type=\"button\" aria-label=\"'+tt('wm_close','Close')+'\">×</button>';
-  html+='<div class=\"wm-ic\">'+WM_ICON_PHONE+'</div>';
-  html+='<h3 class=\"wm-t\">'+tt('wc_failed_t','Connection not completed')+'</h3>';
-  html+='<div class=\"wm-b\">'+tt('wc_failed_b','The wallet connection was cancelled or timed out. Please try again.')+'</div>';
-  html+='<button class=\"wm-cta\" type=\"button\" id=\"wm-retry\">'+tt('wallet_connect','Connect wallet')+'</button>';
+  html+='<button class="wm-x" type="button" aria-label="'+tt('wm_close','Close')+'">\u00d7</button>';
+  html+='<div class="wm-ic">'+WM_ICON_PHONE+'</div>';
+  html+='<h3 class="wm-t">'+tt('wc_failed_t','Connection not completed')+'</h3>';
+  html+='<div class="wm-b">'+tt('wc_failed_b','The wallet connection was cancelled or timed out. Please try again.')+'</div>';
+  html+='<button class="wm-cta" type="button" id="wm-retry">'+tt('wallet_connect','Connect wallet')+'</button>';
   card.innerHTML=html; bd.appendChild(card); document.body.appendChild(bd);
   bd.addEventListener('click',function(e){ if(e.target===bd) closeWalletModal(); });
   var x=card.querySelector('.wm-x'); if(x) x.addEventListener('click',closeWalletModal);
@@ -336,7 +336,7 @@ function renderWallet(){
 }
 
 /* ---------- form + steps ---------- */
-function fillAssets(){ var sel=$('asset'); if(!sel) return; var cur=sel.value; sel.innerHTML=ASSETS.map(function(a){ return '<option value=\"'+a.code+'\">'+a.code+'</option>'; }).join(''); if(cur){ sel.value=cur; } }
+function fillAssets(){ var sel=$('asset'); if(!sel) return; var cur=sel.value; sel.innerHTML=ASSETS.map(function(a){ return '<option value="'+a.code+'">'+a.code+'</option>'; }).join(''); if(cur){ sel.value=cur; } }
 function markBad(id,bad){ var el=$(id); if(!el) return; if(bad) el.classList.add('bad'); else el.classList.remove('bad'); }
 function checkRcpt(){
   var el=$('rcpt'); if(!el) return;
@@ -351,8 +351,8 @@ function paintSteps(){
   var pipe=$('pipe'); if(!pipe) return;
   pipe.innerHTML=STEP_KEYS.map(function(k,i){
     var s=stepState[i]||'';
-    var ic = s==='done' ? '✓' : (s==='fail' ? '!' : String(i+1));
-    return '<div class=\"step '+s+'\"><div class=\"step-ic\">'+ic+'</div><div class=\"step-tx\"><b>'+t(k[0])+'</b><span>'+t(k[1])+'</span></div></div>';
+    var ic = s==='done' ? '\u2713' : (s==='fail' ? '!' : String(i+1));
+    return '<div class="step '+s+'"><div class="step-ic">'+ic+'</div><div class="step-tx"><b>'+t(k[0])+'</b><span>'+t(k[1])+'</span></div></div>';
   }).join('');
 }
 function setStep(i,s){ stepState[i]=s; paintSteps(); }
@@ -363,15 +363,29 @@ function showReceipt(d){
   var box=$('receipt'); if(!box) return;
   var set=function(id,val){ var el=$(id); if(el) el.textContent=val; };
   set('r_from',shorten(d.from,8)); set('r_to',shorten(d.to,8)); set('r_amt',d.amount);
-  set('r_proof',d.memo||'—'); set('r_tx',shorten(d.hash,10)); set('r_time',new Date().toLocaleString());
+  set('r_proof',d.memo||'\u2014'); set('r_tx',shorten(d.hash,10)); set('r_time',new Date().toLocaleString());
   var tv=$('txview'); if(tv){ tv.href=explorerTx(d.hash); }
   lastReceipt=d; box.style.display='';
   try{ box.scrollIntoView({behavior:'smooth',block:'center'}); }catch(_){}
 }
 
 /* ---------- REAL send ---------- */
+function isNotFound(e){ try{ if(e){ if(e.response && e.response.status===404) return true; if(e.name==='NotFoundError') return true; if(/not\s*found/i.test((e.message||'')+'')) return true; } }catch(_){ } return false; }
+function friendbot(addr){ return fetch('https://friendbot.stellar.org/?addr='+encodeURIComponent(addr)).then(function(r){ return r.ok || r.status===400; }).catch(function(){ return false; }); }
+async function ensureFunded(srv,addr,who){
+  try{ return await srv.loadAccount(addr); }
+  catch(e){
+    if(!isNotFound(e)) throw e;
+    toast(who==='dest'?tt('send_funding_dest','Activating recipient on Testnet…'):tt('send_funding_you','Activating your Testnet account…'),'info');
+    var ok=await friendbot(addr);
+    if(!ok) throw mkErr(who==='dest'?t('send_dest_missing'):tt('send_src_missing','Your wallet is not activated on Stellar Testnet yet — try again in a moment.'));
+    for(var i=0;i<6;i++){ await sleep(2000); try{ return await srv.loadAccount(addr); }catch(e2){ if(!isNotFound(e2)) throw e2; } }
+    throw mkErr(who==='dest'?t('send_dest_missing'):tt('send_src_missing','Your wallet is not activated on Stellar Testnet yet — try again in a moment.'));
+  }
+}
 async function doSend(){
   if(busy) return;
+  stopWatch();
   var S2=sdk(); if(!S2){ toast(t('sdk_missing'),'err'); return; }
   var rcpt=(($('rcpt')||{}).value||'').trim();
   if(!validRcpt(rcpt)){ toast(rcptReason(rcpt),'err'); markBad('rcpt',true); return; }
@@ -386,14 +400,14 @@ async function doSend(){
   try{
     setStep(0,'active');
     var srv=server();
-    var src=await srv.loadAccount(Wallet.address);
+    var src=await ensureFunded(srv,Wallet.address,'you');
     var bal=balOf(src.balances,def);
     if(def.issuer && bal===null){ throw mkErr(t('send_sender_no_trust').replace('{a}',def.code)); }
     if(bal!==null && parseFloat(bal) < amt){ throw mkErr(t('send_no_balance').replace('{a}',def.code)); }
     try{
       var dacc=await srv.loadAccount(rcpt);
       if(def.issuer){ if(balOf(dacc.balances,def)===null) throw mkErr(t('send_dest_no_trust').replace('{a}',def.code)); }
-    }catch(de){ if(de&&de._uimsg) throw de; throw mkErr(t('send_dest_missing')); }
+    }catch(de){ if(de&&de._uimsg) throw de; if(isNotFound(de)&&!def.issuer){ await ensureFunded(srv,rcpt,'dest'); } else { throw mkErr(t('send_dest_missing')); } }
     setStep(0,'done'); setStep(1,'active');
     var asset=def.issuer ? new S2.Asset(def.code,def.issuer) : S2.Asset.native();
     var b=new S2.TransactionBuilder(src,{fee:'1000000',networkPassphrase:PASS()})
@@ -427,10 +441,47 @@ function doQR(){
   var amt=parseFloat(($('amt')||{}).value)||0;
   var def=findAsset(($('asset')||{}).value);
   var memo=memoText((($('memo')||{}).value||'').trim());
-  var uri=QR.sep7(rcpt, amt>0?trimAmount(amt):'', def.code, memo);
+  var uri=QR.sep7(rcpt, amt>0?trimAmount(amt):'', def.code, memo, def.issuer);
   if(box&&QR&&QR.renderQR){ QR.renderQR(box,uri); }
-  if(hint){ hint.textContent=tt('send_qr_hint',''); hint.className='hint'; }
+  if(hint){ hint.textContent=tt('send_watch','Waiting for payment…'); hint.className='hint'; }
   if(S&&S.soft) S.soft();
+  watchIncoming(rcpt,def,amt>0?trimAmount(amt):'',memo);
+}
+
+/* ---------- live incoming-payment watch for QR ---------- */
+var _payStream=null, _watchAddr=null;
+function stopWatch(){ if(_payStream){ try{ _payStream(); }catch(_){ } _payStream=null; } _watchAddr=null; }
+function watchIncoming(addr,def,wantAmt,wantMemo){
+  stopWatch(); _watchAddr=addr;
+  var srv=server();
+  function matchAsset(p){ if(p.type==='create_account'){ return !def.issuer; } if(def.issuer){ return p.asset_code===def.code && p.asset_issuer===def.issuer; } return p.asset_type==='native'; }
+  function amtOf(p){ return p.type==='create_account' ? p.starting_balance : p.amount; }
+  function toOf(p){ return p.type==='create_account' ? p.account : p.to; }
+  function fromOf(p){ return p.type==='create_account' ? p.funder : p.from; }
+  try{
+    _payStream=srv.payments().forAccount(addr).cursor('now').stream({
+      onmessage:function(p){
+        try{
+          if(_watchAddr!==addr) return;
+          if(toOf(p)!==addr) return;
+          if(!matchAsset(p)) return;
+          if(wantAmt && Math.abs(parseFloat(amtOf(p))-parseFloat(wantAmt))>0.0000001) return;
+          stopWatch();
+          onIncoming(p,def,fromOf(p),toOf(p),amtOf(p));
+        }catch(_){ }
+      },
+      onerror:function(){ }
+    });
+  }catch(_){ }
+}
+function onIncoming(p,def,from,to,amt){
+  stepState=['done','done','done','done']; paintSteps();
+  var code=def.issuer ? def.code : 'XLM';
+  showReceipt({from:from,to:to,amount:trimAmount(parseFloat(amt))+' '+code,memo:null,hash:p.transaction_hash});
+  try{ server().transactions().transaction(p.transaction_hash).call().then(function(tx){ if(tx&&tx.memo){ var el=$('r_proof'); if(el) el.textContent=tx.memo; } }).catch(function(){}); }catch(_){ }
+  var qh=$('qrhint'); if(qh){ qh.textContent=tt('send_recv_done','Payment received on Stellar Testnet'); qh.className='hint ok'; }
+  if(S&&S.success) S.success();
+  toast(tt('send_recv_done','Payment received on Stellar Testnet'),'ok');
 }
 
 /* ---------- disclosure (roadmap view-key preview) ---------- */
@@ -449,6 +500,7 @@ function copyDisc(){
 
 /* ---------- reset ---------- */
 function resetForm(){
+  stopWatch();
   var rbox=$('receipt'); if(rbox) rbox.style.display='none';
   resetSteps();
   var a=$('amt'); if(a) a.value='1';
@@ -463,12 +515,12 @@ function receiptCanvas(){
   var d=lastReceipt||{}; var W=860,H=560;
   var c=document.createElement('canvas'); c.width=W; c.height=H; var x=c.getContext('2d');
   x.fillStyle='#ffffff'; x.fillRect(0,0,W,H);
-  x.fillStyle='#0b1020'; x.font='700 30px Arial,sans-serif'; x.fillText('Zerolyn — '+t('send_receipt'),48,72);
+  x.fillStyle='#0b1020'; x.font='700 30px Arial,sans-serif'; x.fillText('Zerolyn \u2014 '+t('send_receipt'),48,72);
   x.fillStyle='#1d4ed8'; x.fillRect(48,90,W-96,4);
-  var rows=[[t('send_rcpt_from'),d.from||''],[t('send_rcpt_to'),d.to||''],[t('send_rcpt_amount'),d.amount||''],[t('send_rcpt_status'),t('send_rcpt_status_v')],[t('send_rcpt_proof'),d.memo||'—'],[t('send_rcpt_tx'),d.hash||''],[t('send_rcpt_time'),new Date().toLocaleString()]];
+  var rows=[[t('send_rcpt_from'),d.from||''],[t('send_rcpt_to'),d.to||''],[t('send_rcpt_amount'),d.amount||''],[t('send_rcpt_status'),t('send_rcpt_status_v')],[t('send_rcpt_proof'),d.memo||'\u2014'],[t('send_rcpt_tx'),d.hash||''],[t('send_rcpt_time'),new Date().toLocaleString()]];
   var yy=152;
-  rows.forEach(function(rw){ x.fillStyle='#5f7bb0'; x.font='400 18px Arial,sans-serif'; x.fillText(String(rw[0]),48,yy); x.fillStyle='#0b1020'; x.font='600 18px Arial,sans-serif'; var val=String(rw[1]); if(val.length>56) val=val.slice(0,53)+'…'; x.fillText(val,300,yy); yy+=48; });
-  x.fillStyle='#8a93a6'; x.font='400 14px Arial,sans-serif'; x.fillText('Stellar Testnet · '+((CFG&&CFG.explorer)||''),48,H-32);
+  rows.forEach(function(rw){ x.fillStyle='#5f7bb0'; x.font='400 18px Arial,sans-serif'; x.fillText(String(rw[0]),48,yy); x.fillStyle='#0b1020'; x.font='600 18px Arial,sans-serif'; var val=String(rw[1]); if(val.length>56) val=val.slice(0,53)+'\u2026'; x.fillText(val,300,yy); yy+=48; });
+  x.fillStyle='#8a93a6'; x.font='400 14px Arial,sans-serif'; x.fillText('Stellar Testnet \u00b7 '+((CFG&&CFG.explorer)||''),48,H-32);
   return c;
 }
 function loadScript(src){ return new Promise(function(res,rej){ var s=document.createElement('script'); s.src=src; s.onload=res; s.onerror=rej; document.head.appendChild(s); }); }
@@ -505,4 +557,12 @@ window.SP={
   onLang:function(){ paintSteps(); renderWallet(); fillAssets(); }
 };
 if(document.readyState!=='loading'){ try{ window.SP.ready(); }catch(_){} }
+})();
+
+;(function(){ if(!window.I18N) return; function M(l,o){ window.I18N[l]=Object.assign(window.I18N[l]||{},o); }
+M('en',{ send_funding_you:'Activating your Testnet account…', send_funding_dest:'Activating recipient on Testnet…', send_src_missing:'Your wallet is not activated on Stellar Testnet yet — we tried to fund it automatically; please try again in a moment.', send_watch:'Waiting for payment…', send_recv_done:'Payment received on Stellar Testnet', send_rcpt_tx:'Transaction' });
+M('ru',{ send_funding_you:'Активируем ваш аккаунт в Testnet…', send_funding_dest:'Активируем получателя в Testnet…', send_src_missing:'Ваш кошелёк ещё не активирован в Stellar Testnet — мы попытались пополнить его автоматически; попробуйте ещё раз через мгновение.', send_watch:'Ожидание платежа…', send_recv_done:'Платёж получен в Stellar Testnet', send_rcpt_tx:'Транзакция' });
+M('es',{ send_funding_you:'Activando tu cuenta de Testnet…', send_funding_dest:'Activando al destinatario en Testnet…', send_src_missing:'Tu billetera aún no está activada en Stellar Testnet; intentamos financiarla automáticamente; inténtalo de nuevo en un momento.', send_watch:'Esperando el pago…', send_recv_done:'Pago recibido en Stellar Testnet', send_rcpt_tx:'Transacción' });
+M('de',{ send_funding_you:'Aktiviere dein Testnet-Konto…', send_funding_dest:'Aktiviere Empfänger im Testnet…', send_src_missing:'Deine Wallet ist im Stellar Testnet noch nicht aktiviert – wir haben versucht, sie automatisch zu finanzieren; bitte versuche es gleich erneut.', send_watch:'Warte auf Zahlung…', send_recv_done:'Zahlung im Stellar Testnet erhalten', send_rcpt_tx:'Transaktion' });
+M('uk',{ send_funding_you:'Активуємо ваш акаунт у Testnet…', send_funding_dest:'Активуємо отримувача у Testnet…', send_src_missing:'Ваш гаманець ще не активовано у Stellar Testnet — ми спробували поповнити його автоматично; спробуйте ще раз за мить.', send_watch:'Очікування платежу…', send_recv_done:'Платіж отримано у Stellar Testnet', send_rcpt_tx:'Транзакція' });
 })();
