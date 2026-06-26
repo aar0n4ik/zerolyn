@@ -161,3 +161,7 @@ body.send-lux .reveal-lux.in{animation:none}
   body.send-lux .step.active .step-ic{animation:none}
   body.send-lux .lux-field:focus-within::after{animation:none}
 }
+
+/* Wallet address: a 56-char Stellar key must wrap inside the panel instead of
+   overflowing the screen and breaking the mobile layout. */
+body.send-lux #waddr{display:block;max-width:100%;word-break:break-all;overflow-wrap:anywhere;line-height:1.5}
