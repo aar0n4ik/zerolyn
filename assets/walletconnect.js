@@ -40,13 +40,23 @@
     };
   }
   function isMobile() { return /Android|iPhone|iPad|iPod|Mobile/i.test(navigator.userAgent || ''); }
+  // Use the language the user actually selected on the site (app.js stores it in
+  // localStorage as 'sp_lang' and mirrors it on <html lang>), NOT navigator.language
+  // -- otherwise a Russian browser shows Russian text while the site is in English.
+  function siteLang() {
+    var l = '';
+    try { l = localStorage.getItem('sp_lang') || ''; } catch (_) {}
+    if (!l) { try { l = (document.documentElement && document.documentElement.lang) || ''; } catch (_) {} }
+    if (!l) { l = navigator.language || 'en'; }
+    return l.slice(0, 2).toLowerCase();
+  }
   // Production Freighter Mobile registers the custom scheme "freighterwallet".
   // Used only by the no-AppKit fallback path below.
   var FREIGHTER_SCHEME = 'freighterwallet';
   function freighterLink(uri) { return FREIGHTER_SCHEME + '://wc?uri=' + encodeURIComponent(uri); }
 
   function copyLabel() {
-    var l = (navigator.language || 'en').slice(0, 2).toLowerCase();
+    var l = siteLang();
     var m = {
       en: 'Copy link (paste it in Freighter)',
       ru: '\u0421\u043a\u043e\u043f\u0438\u0440\u043e\u0432\u0430\u0442\u044c \u0441\u0441\u044b\u043b\u043a\u0443 (\u0432\u0441\u0442\u0430\u0432\u044c\u0442\u0435 \u0432 Freighter)',
@@ -91,7 +101,7 @@
     try { var a = sess.namespaces.stellar.accounts[0].split(':'); return a[0] + ':' + a[1]; } catch (_) { return null; }
   }
   function warnLabel() {
-    var l = (navigator.language || 'en').slice(0, 2).toLowerCase();
+    var l = siteLang();
     var m = {
       en: 'Connected on Mainnet. Switch Freighter to Testnet - this app works on Stellar Testnet only.',
       ru: '\u0412\u044b \u043f\u043e\u0434\u043a\u043b\u044e\u0447\u0438\u043b\u0438\u0441\u044c \u043a Mainnet. \u041f\u0435\u0440\u0435\u043a\u043b\u044e\u0447\u0438\u0442\u0435 Freighter \u043d\u0430 Testnet - \u043f\u0440\u0438\u043b\u043e\u0436\u0435\u043d\u0438\u0435 \u0440\u0430\u0431\u043e\u0442\u0430\u0435\u0442 \u0442\u043e\u043b\u044c\u043a\u043e \u0432 Stellar Testnet.',
@@ -137,6 +147,7 @@
         universalProvider: p,
         manualWCControl: true,
         featuredWalletIds: [FREIGHTER_WALLET_ID],
+        includeWalletIds: [FREIGHTER_WALLET_ID],
         metadata: meta(),
         features: { analytics: false }
       });
