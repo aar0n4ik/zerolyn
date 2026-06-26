@@ -386,12 +386,12 @@ async function doSend(){
   try{
     setStep(0,'active');
     var srv=server();
-    var src=await srv.getAccount(Wallet.address);
+    var src=await srv.loadAccount(Wallet.address);
     var bal=balOf(src.balances,def);
     if(def.issuer && bal===null){ throw mkErr(t('send_sender_no_trust').replace('{a}',def.code)); }
     if(bal!==null && parseFloat(bal) < amt){ throw mkErr(t('send_no_balance').replace('{a}',def.code)); }
     try{
-      var dacc=await srv.getAccount(rcpt);
+      var dacc=await srv.loadAccount(rcpt);
       if(def.issuer){ if(balOf(dacc.balances,def)===null) throw mkErr(t('send_dest_no_trust').replace('{a}',def.code)); }
     }catch(de){ if(de&&de._uimsg) throw de; throw mkErr(t('send_dest_missing')); }
     setStep(0,'done'); setStep(1,'active');
@@ -406,11 +406,9 @@ async function doSend(){
     if(!signed){ setStep(2,'fail'); throw mkErr(t('send_signed_rejected')); }
     setStep(2,'done'); setStep(3,'active');
     var stx=S2.TransactionBuilder.fromXDR(signed,PASS());
-    var res=await srv.sendTransaction(stx);
-    var hash=res&&res.hash; if(!hash) throw mkErr('submit failed');
-    var got=null;
-    for(var i=0;i<15;i++){ await sleep(1800); try{ got=await srv.getTransaction(hash); }catch(_){ got=null; } if(got&&got.status&&got.status!=='NOT_FOUND'&&got.status!=='PENDING') break; }
-    if(got&&got.status==='FAILED'){ setStep(3,'fail'); throw mkErr(horizonError(got)||'Transaction failed on-chain'); }
+    var res=await srv.submitTransaction(stx);
+    var hash=res&&(res.hash||res.id); if(!hash){ setStep(3,'fail'); throw mkErr('submit failed'); }
+    if(res&&res.successful===false){ setStep(3,'fail'); throw mkErr(horizonError({response:{data:res}})||'Transaction failed on-chain'); }
     setStep(3,'done');
     showReceipt({from:Wallet.address,to:rcpt,amount:trimAmount(amt)+' '+def.code,memo:memo,hash:hash});
     if(S&&S.success) S.success(); toast(t('send_done'),'ok');
