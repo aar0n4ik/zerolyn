@@ -181,7 +181,62 @@
       if (p.session) { session = p.session; address = addrOf(session); connectedChain = chainOf(session); }
       return loadModal(p).then(function () { return p; });
     });
+    // If init fails (transient CDN/relay hiccup), clear the cached promise so the
+    // NEXT tap retries from scratch instead of reusing a dead, already-rejected
+    // promise -- that reuse is what produced "couldn't connect" on the first taps.
+    initing.catch(function () { initing = null; });
     return initing;
+  }
+
+  // Pairing params: request BOTH Stellar networks as OPTIONAL namespaces.
+  function pairParams() {
+    return { optionalNamespaces: { stellar: { chains: [CHAIN_PUBNET, CHAIN_TESTNET], methods: METHODS, events: [] } } };
+  }
+  // A failure is "transient" (worth one silent retry) UNLESS the user explicitly
+  // rejected/cancelled the request in the wallet.
+  function isUserReject(err) {
+    var m = '';
+    try { m = ((err && (err.message || err.reason || err.code)) || err || '') + ''; } catch (_) {}
+    return /reject|declin|cancel|denied|disapprov|\buser\b/i.test(m);
+  }
+  // Open the AppKit pairing and await the session. On a transient first-tap
+  // failure, wait briefly and retry once (keeping the modal open) instead of
+  // bubbling a false "couldn't connect" up to send.js.
+  function pairLoop(p, tries) {
+    return p.connect(pairParams()).then(function (sess) {
+      try { if (modal) modal.close(); } catch (_) {}
+      session = sess; address = addrOf(sess); connectedChain = chainOf(sess);
+      if (connectedChain && connectedChain !== CHAIN_TESTNET) { warnWrongNetwork(); }
+      return address;
+    }, function (err) {
+      if (tries > 1 && !isUserReject(err)) {
+        return new Promise(function (r) { setTimeout(r, 900); }).then(function () {
+          try { if (modal) modal.open(); } catch (_) {}
+          return pairLoop(p, tries - 1);
+        });
+      }
+      try { if (modal) modal.close(); } catch (_) {}
+      showNativeModal();
+      throw err;
+    });
+  }
+  // After a sign request is published to the relay, a mobile user is still in the
+  // browser -- nothing surfaces the prompt, so step 3 hangs forever. Deep-link
+  // into the wallet so Freighter comes to the foreground and shows the pending
+  // request. Prefer the wallet's own redirect from the session metadata, else
+  // Freighter's registered scheme.
+  function walletRedirect() {
+    try {
+      var r = session && session.peer && session.peer.metadata && session.peer.metadata.redirect;
+      if (r && (r.native || r.universal)) return r.native || r.universal;
+    } catch (_) {}
+    return FREIGHTER_SCHEME + '://';
+  }
+  function focusWalletForRequest() {
+    if (!isMobile()) return;
+    // Defer so provider.request() actually publishes to the relay before we
+    // navigate away (otherwise the wallet opens with nothing pending).
+    setTimeout(function () { try { window.location.href = walletRedirect(); } catch (_) {} }, 150);
   }
 
   window.SPWC = {
@@ -226,30 +281,25 @@
         // approve on whichever network it is on (a single REQUIRED testnet chain
         // is rejected outright when the wallet is on Mainnet). We then detect the
         // approved network and warn if it is not Testnet (this app is testnet-only).
-        return p.connect({
-          optionalNamespaces: { stellar: { chains: [CHAIN_PUBNET, CHAIN_TESTNET], methods: METHODS, events: [] } }
-        }).then(function (sess) {
-          try { if (modal) modal.close(); } catch (_) {}
-          session = sess; address = addrOf(sess); connectedChain = chainOf(sess);
-          if (connectedChain && connectedChain !== CHAIN_TESTNET) { warnWrongNetwork(); }
-          return address;
-        }, function (err) {
-          try { if (modal) modal.close(); } catch (_) {}
-          showNativeModal();
-          throw err;
-        });
+        // pairLoop retries once on a TRANSIENT first-tap failure (relay/socket
+        // still warming up) so the user never sees a spurious "couldn't connect".
+        return pairLoop(p, 2);
       });
     },
 
     signXDR: function (xdr) {
       return ensure().then(function (p) {
-        return p.request({ chainId: CHAIN, request: { method: 'stellar_signXDR', params: { xdr: xdr } } }, CHAIN);
+        var req = p.request({ chainId: CHAIN, request: { method: 'stellar_signXDR', params: { xdr: xdr } } }, CHAIN);
+        focusWalletForRequest();
+        return req;
       }).then(function (res) { return (res && (res.signedXDR || res.signedXdr)) || res || xdr; });
     },
 
     signAndSubmitXDR: function (xdr) {
       return ensure().then(function (p) {
-        return p.request({ chainId: CHAIN, request: { method: 'stellar_signAndSubmitXDR', params: { xdr: xdr } } }, CHAIN);
+        var req = p.request({ chainId: CHAIN, request: { method: 'stellar_signAndSubmitXDR', params: { xdr: xdr } } }, CHAIN);
+        focusWalletForRequest();
+        return req;
       });
     },
 
