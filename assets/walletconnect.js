@@ -16,11 +16,13 @@
 
   var PROJECT_ID = '8270edd9a0e826b51a7729bac80a21ff';
   var NETWORK = 'testnet';                 // 'testnet' | 'pubnet'
-  var CHAIN   = 'stellar:' + NETWORK;      // CAIP-2 chain id
+  var CHAIN   = 'stellar:' + NETWORK;      // CAIP-2 chain id (this app: testnet)
+  var CHAIN_TESTNET = 'stellar:testnet';
+  var CHAIN_PUBNET  = 'stellar:pubnet';
   var METHODS = ['stellar_signXDR', 'stellar_signAndSubmitXDR'];
   var UP_CDN  = 'https://esm.sh/@walletconnect/universal-provider@2.17.2';
 
-  var provider = null, session = null, address = null, initing = null, uriCb = null;
+  var provider = null, session = null, address = null, initing = null, uriCb = null, connectedChain = null;
 
   function meta() {
     var o = location.origin;
@@ -83,6 +85,32 @@
   function addrOf(sess) {
     try { return sess.namespaces.stellar.accounts[0].split(':').pop(); } catch (_) { return null; }
   }
+  // Which Stellar network the wallet actually approved (e.g. 'stellar:testnet').
+  function chainOf(sess) {
+    try { var a = sess.namespaces.stellar.accounts[0].split(':'); return a[0] + ':' + a[1]; } catch (_) { return null; }
+  }
+  function warnLabel() {
+    var l = (navigator.language || 'en').slice(0, 2).toLowerCase();
+    var m = {
+      en: 'Connected on Mainnet. Switch Freighter to Testnet - this app works on Stellar Testnet only.',
+      ru: '\u0412\u044b \u043f\u043e\u0434\u043a\u043b\u044e\u0447\u0438\u043b\u0438\u0441\u044c \u043a Mainnet. \u041f\u0435\u0440\u0435\u043a\u043b\u044e\u0447\u0438\u0442\u0435 Freighter \u043d\u0430 Testnet - \u043f\u0440\u0438\u043b\u043e\u0436\u0435\u043d\u0438\u0435 \u0440\u0430\u0431\u043e\u0442\u0430\u0435\u0442 \u0442\u043e\u043b\u044c\u043a\u043e \u0432 Stellar Testnet.',
+      uk: '\u0412\u0438 \u043f\u0456\u0434\u043a\u043b\u044e\u0447\u0438\u043b\u0438\u0441\u044f \u0434\u043e Mainnet. \u041f\u0435\u0440\u0435\u043c\u043a\u043d\u0456\u0442\u044c Freighter \u043d\u0430 Testnet - \u0437\u0430\u0441\u0442\u043e\u0441\u0443\u043d\u043e\u043a \u043f\u0440\u0430\u0446\u044e\u0454 \u043b\u0438\u0448\u0435 \u0432 Stellar Testnet.',
+      es: 'Te conectaste a Mainnet. Cambia Freighter a Testnet: esta app solo funciona en Stellar Testnet.',
+      de: 'Mit Mainnet verbunden. Stelle Freighter auf Testnet um - diese App nutzt nur das Stellar Testnet.'
+    };
+    return m[l] || m.en;
+  }
+  // Self-contained floating toast (the page modal closes right after connect, so a
+  // modal banner would not survive). Used to flag a wrong-network connection.
+  function warnWrongNetwork() {
+    try {
+      var d = document.createElement('div');
+      d.textContent = warnLabel();
+      d.style.cssText = 'position:fixed;left:16px;right:16px;bottom:20px;z-index:100000;max-width:420px;margin:0 auto;background:#7c2d12;color:#fff;padding:14px 16px;border-radius:12px;font-size:14px;line-height:1.5;box-shadow:0 12px 40px rgba(0,0,0,.35)';
+      document.body.appendChild(d);
+      setTimeout(function () { try { d.parentNode.removeChild(d); } catch (_) {} }, 9000);
+    } catch (_) {}
+  }
 
   // Lazily load and initialize the WalletConnect UniversalProvider.
   function ensure() {
@@ -128,6 +156,8 @@
       return true;
     },
     getPublicKey: function () { return address; },
+    // The CAIP-2 chain the wallet connected on (e.g. 'stellar:testnet'). null until connected.
+    network: function () { return connectedChain; },
 
     // Build Freighter's deep link from a WC pairing URI (exposed for the page modal).
     deepLink: function (uri) { return freighterLink(uri); },
@@ -138,9 +168,20 @@
       uriCb = onUri || null;
       return ensure().then(function (p) {
         if (address) return address;
+        // Request BOTH Stellar networks as OPTIONAL namespaces. Freighter rejects a
+        // connection outright when the dApp's REQUIRED chain differs from the wallet's
+        // active network (see approveSessionProposal: it returns a "wrong network"
+        // error if the active chain is not in the proposal). Asking for a single
+        // required testnet chain therefore fails whenever the user's Freighter is on
+        // Mainnet. Optional namespaces let the wallet approve on whichever network it
+        // is on; we then detect it and warn if it is not Testnet (this app is testnet-only).
         return p.connect({
-          namespaces: { stellar: { chains: [CHAIN], methods: METHODS, events: [] } }
-        }).then(function (sess) { session = sess; address = addrOf(sess); return address; });
+          optionalNamespaces: { stellar: { chains: [CHAIN_PUBNET, CHAIN_TESTNET], methods: METHODS, events: [] } }
+        }).then(function (sess) {
+          session = sess; address = addrOf(sess); connectedChain = chainOf(sess);
+          if (connectedChain && connectedChain !== CHAIN_TESTNET) { warnWrongNetwork(); }
+          return address;
+        });
       });
     },
 
@@ -159,7 +200,7 @@
     },
 
     disconnect: function () {
-      address = null; session = null; uriCb = null;
+      address = null; session = null; uriCb = null; connectedChain = null;
       if (!provider) return Promise.resolve();
       return Promise.resolve().then(function () { if (provider.session) return provider.disconnect(); }).catch(function () {});
     }
