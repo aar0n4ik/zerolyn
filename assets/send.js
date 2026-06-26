@@ -260,4 +260,251 @@ function setWCUri(uri){
   var open=document.getElementById('wm-open');
   if(open){ open.onclick=function(){ try{ window.location.href=uri; }catch(_){} }; }
   var box=document.getElementById('wm-qr');
-  if(box){ box.inner
+  if(box){ try{ box.innerHTML=''; if(QR&&QR.renderQR){ QR.renderQR(box,uri); } }catch(_){} }
+}
+function showWCFailed(){
+  ensureWalletModalStyles(); closeWalletModal();
+  var bd=document.createElement('div'); bd.id='wm-backdrop'; bd.className='wm-backdrop';
+  var card=document.createElement('div'); card.className='wm-card';
+  var html='';
+  html+='<button class=\"wm-x\" type=\"button\" aria-label=\"'+tt('wm_close','Close')+'\">×</button>';
+  html+='<div class=\"wm-ic\">'+WM_ICON_PHONE+'</div>';
+  html+='<h3 class=\"wm-t\">'+tt('wc_failed_t','Connection not completed')+'</h3>';
+  html+='<div class=\"wm-b\">'+tt('wc_failed_b','The wallet connection was cancelled or timed out. Please try again.')+'</div>';
+  html+='<button class=\"wm-cta\" type=\"button\" id=\"wm-retry\">'+tt('wallet_connect','Connect wallet')+'</button>';
+  card.innerHTML=html; bd.appendChild(card); document.body.appendChild(bd);
+  bd.addEventListener('click',function(e){ if(e.target===bd) closeWalletModal(); });
+  var x=card.querySelector('.wm-x'); if(x) x.addEventListener('click',closeWalletModal);
+  var rt=card.querySelector('#wm-retry'); if(rt) rt.addEventListener('click',function(){ closeWalletModal(); Wallet.connect().then(renderWallet); });
+}
+
+/* ---------- wallet state: desktop Freighter extension OR Freighter Mobile via WalletConnect ---------- */
+function sleep(ms){ return new Promise(function(r){ setTimeout(r,ms); }); }
+var WADDR=null, WVIA=null; /* 'ext' | 'wc' */
+var Wallet={
+  get address(){ return WADDR; },
+  connected:function(){ return !!WADDR; },
+  via:function(){ return WVIA; },
+  connect:async function(){
+    var mob=isMobileDevice();
+    if(mob && WC()){
+      showWCConnecting();
+      try{
+        var addr=await WC().connect(setWCUri);
+        closeWalletModal();
+        if(addr && /^G[A-Z2-7]{55}$/.test(addr)){ WADDR=addr; WVIA='wc'; toast(t('wallet_connected'),'ok'); if(S&&S.success) S.success(); return addr; }
+        throw new Error('no-address');
+      }catch(e){ closeWalletModal(); showWCFailed(); return null; }
+    }
+    var api=FA(); if(!api) api=await waitForFreighter(1500);
+    if(!api){ showWalletModal(); return null; }
+    try{
+      if(api.setAllowed){ await api.setAllowed(); }
+      else if(api.requestAccess){ await api.requestAccess(); }
+      var pk=null;
+      if(api.getAddress){ var r=await api.getAddress(); pk=r&&(r.address||r); }
+      else if(api.getPublicKey){ pk=await api.getPublicKey(); }
+      if(!pk||!/^G[A-Z2-7]{55}$/.test(pk)){ throw new Error('no-pk'); }
+      try{
+        var net=null;
+        if(api.getNetworkDetails){ var nd=await api.getNetworkDetails(); net=nd&&(nd.networkPassphrase||nd.network); }
+        else if(api.getNetwork){ net=await api.getNetwork(); }
+        if(net && String(net).toUpperCase().indexOf('TEST')<0){ toast(tt('wallet_wrong_net','Switch your wallet to Stellar Testnet.'),'err'); }
+      }catch(_){}
+      WADDR=pk; WVIA='ext'; toast(t('wallet_connected'),'ok'); if(S&&S.success) S.success(); return pk;
+    }catch(e){ toast(t('wallet_rejected'),'err'); if(S&&S.error) S.error(); return null; }
+  },
+  signXDR:async function(xdr){
+    if(WVIA==='wc' && WC()){ return await WC().signXDR(xdr); }
+    var api=FA(); if(!api) throw mkErr(tt('wallet_no_freighter','Freighter not found.'));
+    var r=await api.signTransaction(xdr,{networkPassphrase:PASS(),network:'TESTNET',address:WADDR});
+    if(typeof r==='string') return r;
+    if(r&&r.signedTxXdr) return r.signedTxXdr;
+    if(r&&r.signedXDR) return r.signedXDR;
+    if(r&&r.error) throw new Error((r.error&&r.error.message)||String(r.error));
+    throw new Error('sign failed');
+  },
+  disconnect:function(){ WADDR=null; WVIA=null; try{ if(WC()) WC().disconnect(); }catch(_){} toast(t('wallet_disconnected'),'info'); }
+};
+function renderWallet(){
+  var dot=$('wdot'), st=$('wstate'), btn=$('wbtn'), ad=$('waddr');
+  var on=Wallet.connected();
+  if(dot){ dot.className='dot '+(on?'on':'off'); }
+  if(st){ st.textContent = on ? t('wallet_connected') : t('wallet_not'); }
+  if(btn){ btn.textContent = on ? t('wallet_disconnect') : t('wallet_connect'); }
+  if(ad){ ad.textContent = on ? WADDR : ''; }
+}
+
+/* ---------- form + steps ---------- */
+function fillAssets(){ var sel=$('asset'); if(!sel) return; var cur=sel.value; sel.innerHTML=ASSETS.map(function(a){ return '<option value=\"'+a.code+'\">'+a.code+'</option>'; }).join(''); if(cur){ sel.value=cur; } }
+function markBad(id,bad){ var el=$(id); if(!el) return; if(bad) el.classList.add('bad'); else el.classList.remove('bad'); }
+function checkRcpt(){
+  var el=$('rcpt'); if(!el) return;
+  var v=(el.value||'').trim(); var h=$('rhint');
+  if(!v){ if(h){ h.textContent=''; h.className='hint'; } markBad('rcpt',false); return; }
+  if(validRcpt(v)){ if(h){ h.textContent=''; h.className='hint'; } markBad('rcpt',false); }
+  else { if(h){ h.textContent=rcptReason(v); h.className='hint bad'; } markBad('rcpt',true); }
+}
+var STEP_KEYS=[['stepv_w','stepv_wd'],['stepv_p','stepv_pd'],['stepv_c','stepv_cd'],['stepv_s','stepv_sd']];
+var stepState=['','','',''];
+function paintSteps(){
+  var pipe=$('pipe'); if(!pipe) return;
+  pipe.innerHTML=STEP_KEYS.map(function(k,i){
+    var s=stepState[i]||'';
+    var ic = s==='done' ? '✓' : (s==='fail' ? '!' : String(i+1));
+    return '<div class=\"step '+s+'\"><div class=\"step-ic\">'+ic+'</div><div class=\"step-tx\"><b>'+t(k[0])+'</b><span>'+t(k[1])+'</span></div></div>';
+  }).join('');
+}
+function setStep(i,s){ stepState[i]=s; paintSteps(); }
+function resetSteps(){ stepState=['','','','']; paintSteps(); }
+
+/* ---------- receipt ---------- */
+function showReceipt(d){
+  var box=$('receipt'); if(!box) return;
+  var set=function(id,val){ var el=$(id); if(el) el.textContent=val; };
+  set('r_from',shorten(d.from,8)); set('r_to',shorten(d.to,8)); set('r_amt',d.amount);
+  set('r_proof',d.memo||'—'); set('r_tx',shorten(d.hash,10)); set('r_time',new Date().toLocaleString());
+  var tv=$('txview'); if(tv){ tv.href=explorerTx(d.hash); }
+  lastReceipt=d; box.style.display='';
+  try{ box.scrollIntoView({behavior:'smooth',block:'center'}); }catch(_){}
+}
+
+/* ---------- REAL send ---------- */
+async function doSend(){
+  if(busy) return;
+  var S2=sdk(); if(!S2){ toast(t('sdk_missing'),'err'); return; }
+  var rcpt=(($('rcpt')||{}).value||'').trim();
+  if(!validRcpt(rcpt)){ toast(rcptReason(rcpt),'err'); markBad('rcpt',true); return; }
+  var amt=parseFloat(($('amt')||{}).value);
+  if(!(amt>0)){ toast(t('send_need_amount'),'err'); return; }
+  if(!Wallet.connected()){ toast(t('send_need_wallet'),'info'); await Wallet.connect(); renderWallet(); if(!Wallet.connected()) return; }
+  var def=findAsset(($('asset')||{}).value);
+  var memo=memoText((($('memo')||{}).value||'').trim());
+  busy=true; var btn=$('sendbtn'); var oldLabel=btn?btn.textContent:'';
+  if(btn){ btn.disabled=true; btn.textContent=tt('send_btn_busy',t('send_btn')); }
+  resetSteps(); var rbox=$('receipt'); if(rbox) rbox.style.display='none';
+  try{
+    setStep(0,'active');
+    var srv=server();
+    var src=await srv.getAccount(Wallet.address);
+    var bal=balOf(src.balances,def);
+    if(def.issuer && bal===null){ throw mkErr(t('send_sender_no_trust').replace('{a}',def.code)); }
+    if(bal!==null && parseFloat(bal) < amt){ throw mkErr(t('send_no_balance').replace('{a}',def.code)); }
+    try{
+      var dacc=await srv.getAccount(rcpt);
+      if(def.issuer){ if(balOf(dacc.balances,def)===null) throw mkErr(t('send_dest_no_trust').replace('{a}',def.code)); }
+    }catch(de){ if(de&&de._uimsg) throw de; throw mkErr(t('send_dest_missing')); }
+    setStep(0,'done'); setStep(1,'active');
+    var asset=def.issuer ? new S2.Asset(def.code,def.issuer) : S2.Asset.native();
+    var b=new S2.TransactionBuilder(src,{fee:'1000000',networkPassphrase:PASS()})
+      .addOperation(S2.Operation.payment({destination:rcpt,asset:asset,amount:trimAmount(amt)}));
+    if(memo) b.addMemo(S2.Memo.text(memo));
+    var tx=b.setTimeout(120).build();
+    setStep(1,'done'); setStep(2,'active');
+    var signed;
+    try{ signed=await Wallet.signXDR(tx.toXDR()); }catch(se){ setStep(2,'fail'); throw mkErr(t('send_signed_rejected')); }
+    if(!signed){ setStep(2,'fail'); throw mkErr(t('send_signed_rejected')); }
+    setStep(2,'done'); setStep(3,'active');
+    var stx=S2.TransactionBuilder.fromXDR(signed,PASS());
+    var res=await srv.sendTransaction(stx);
+    var hash=res&&res.hash; if(!hash) throw mkErr('submit failed');
+    var got=null;
+    for(var i=0;i<15;i++){ await sleep(1800); try{ got=await srv.getTransaction(hash); }catch(_){ got=null; } if(got&&got.status&&got.status!=='NOT_FOUND'&&got.status!=='PENDING') break; }
+    if(got&&got.status==='FAILED'){ setStep(3,'fail'); throw mkErr(horizonError(got)||'Transaction failed on-chain'); }
+    setStep(3,'done');
+    showReceipt({from:Wallet.address,to:rcpt,amount:trimAmount(amt)+' '+def.code,memo:memo,hash:hash});
+    if(S&&S.success) S.success(); toast(t('send_done'),'ok');
+  }catch(e){
+    for(var j=0;j<stepState.length;j++){ if(stepState[j]==='active') stepState[j]='fail'; } paintSteps();
+    var msg=(e&&e._uimsg)||horizonError(e)||(e&&e.message)||'Error';
+    toast(msg,'err'); if(S&&S.error) S.error();
+  }finally{ busy=false; if(btn){ btn.disabled=false; btn.textContent=oldLabel||t('send_btn'); } }
+}
+
+/* ---------- QR (SEP-7) ---------- */
+function doQR(){
+  var rcpt=(($('rcpt')||{}).value||'').trim();
+  var box=$('qr'); var hint=$('qrhint');
+  if(!validRcpt(rcpt)){ if(box) box.innerHTML=''; toast(rcptReason(rcpt),'err'); markBad('rcpt',true); return; }
+  var amt=parseFloat(($('amt')||{}).value)||0;
+  var def=findAsset(($('asset')||{}).value);
+  var memo=memoText((($('memo')||{}).value||'').trim());
+  var uri=QR.sep7(rcpt, amt>0?trimAmount(amt):'', def.code, memo);
+  if(box&&QR&&QR.renderQR){ QR.renderQR(box,uri); }
+  if(hint){ hint.textContent=tt('send_qr_hint',''); hint.className='hint'; }
+  if(S&&S.soft) S.soft();
+}
+
+/* ---------- disclosure (roadmap view-key preview) ---------- */
+function doDisclosure(){
+  var box=$('vkey'); var row=$('discrow'); if(!box) return;
+  if(box.style.display!=='none' && box.textContent){ box.style.display='none'; if(row) row.style.display='none'; return; }
+  var vk={ scheme:'groth16', curve:'bls12381', verifier:(CFG&&CFG.verifierContractId)||'', network:'stellar:testnet', statement:'amount >= 1 & amount <= balance & amount <= public_limit', viewing_key:'roadmap: per-transfer viewing keys for auditors' };
+  box.textContent=JSON.stringify(vk,null,2); box.style.display='';
+  if(row) row.style.display='';
+  if(S&&S.soft) S.soft();
+}
+function copyDisc(){
+  var box=$('vkey'); if(!box||!box.textContent) return;
+  try{ navigator.clipboard.writeText(box.textContent); toast(tt('wm_copied','Copied'),'ok'); }catch(_){}
+}
+
+/* ---------- reset ---------- */
+function resetForm(){
+  var rbox=$('receipt'); if(rbox) rbox.style.display='none';
+  resetSteps();
+  var a=$('amt'); if(a) a.value='1';
+  var m=$('memo'); if(m) m.value='';
+  var r=$('rcpt'); if(r) r.value='';
+  checkRcpt();
+  try{ if(r) r.focus(); }catch(_){}
+}
+
+/* ---------- receipt download (PDF, Unicode-safe via canvas; PNG fallback) ---------- */
+function receiptCanvas(){
+  var d=lastReceipt||{}; var W=860,H=560;
+  var c=document.createElement('canvas'); c.width=W; c.height=H; var x=c.getContext('2d');
+  x.fillStyle='#ffffff'; x.fillRect(0,0,W,H);
+  x.fillStyle='#0b1020'; x.font='700 30px Arial,sans-serif'; x.fillText('Zerolyn — '+t('send_receipt'),48,72);
+  x.fillStyle='#1d4ed8'; x.fillRect(48,90,W-96,4);
+  var rows=[[t('send_rcpt_from'),d.from||''],[t('send_rcpt_to'),d.to||''],[t('send_rcpt_amount'),d.amount||''],[t('send_rcpt_status'),t('send_rcpt_status_v')],[t('send_rcpt_proof'),d.memo||'—'],[t('send_rcpt_tx'),d.hash||''],[t('send_rcpt_time'),new Date().toLocaleString()]];
+  var yy=152;
+  rows.forEach(function(rw){ x.fillStyle='#5f7bb0'; x.font='400 18px Arial,sans-serif'; x.fillText(String(rw[0]),48,yy); x.fillStyle='#0b1020'; x.font='600 18px Arial,sans-serif'; var val=String(rw[1]); if(val.length>56) val=val.slice(0,53)+'…'; x.fillText(val,300,yy); yy+=48; });
+  x.fillStyle='#8a93a6'; x.font='400 14px Arial,sans-serif'; x.fillText('Stellar Testnet · '+((CFG&&CFG.explorer)||''),48,H-32);
+  return c;
+}
+function loadScript(src){ return new Promise(function(res,rej){ var s=document.createElement('script'); s.src=src; s.onload=res; s.onerror=rej; document.head.appendChild(s); }); }
+async function downloadReceipt(){
+  if(!lastReceipt){ return; }
+  var c=receiptCanvas();
+  try{
+    if(!(window.jspdf&&window.jspdf.jsPDF)){ await loadScript('https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js'); }
+    var JS=window.jspdf&&window.jspdf.jsPDF;
+    if(JS){
+      var pdf=new JS({orientation:'landscape',unit:'px',format:[c.width,c.height]});
+      pdf.addImage(c.toDataURL('image/png'),'PNG',0,0,c.width,c.height);
+      pdf.save('zerolyn-receipt.pdf'); if(S&&S.soft) S.soft(); return;
+    }
+  }catch(_){}
+  var a=document.createElement('a'); a.href=c.toDataURL('image/png'); a.download='zerolyn-receipt.png'; document.body.appendChild(a); a.click(); document.body.removeChild(a); if(S&&S.soft) S.soft();
+}
+
+/* ---------- init (app.js calls window.SP.ready on DOMContentLoaded) ---------- */
+window.SP={
+  ready:function(){
+    fillAssets(); renderWallet(); resetSteps(); checkRcpt();
+    var bind=function(id,ev,fn){ var el=$(id); if(el&&!el._spw){ el._spw=1; el.addEventListener(ev,fn); } };
+    bind('wbtn','click',function(){ if(Wallet.connected()){ Wallet.disconnect(); renderWallet(); } else { Wallet.connect().then(renderWallet); } });
+    bind('sendbtn','click',doSend);
+    bind('qrbtn','click',doQR);
+    bind('discbtn','click',doDisclosure);
+    bind('disccopy','click',copyDisc);
+    bind('againbtn','click',resetForm);
+    bind('pdfbtn','click',downloadReceipt);
+    bind('rcpt','input',checkRcpt);
+    bind('rcpt','blur',checkRcpt);
+  },
+  onLang:function(){ paintSteps(); renderWallet(); fillAssets(); }
+};
+if(document.readyState!=='loading'){ try{ window.SP.ready(); }catch(_){} }
+})();
