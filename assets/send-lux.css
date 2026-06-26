@@ -72,7 +72,7 @@ body.send-lux .btn-lg{padding:15px 26px}
 
 /* Floating-label fields */
 body.send-lux .lux-field{position:relative;margin-bottom:18px;display:block}
-body.send-lux .amount-row{display:flex;gap:14px}
+body.send-lux .amount-row{display:flex;gap:14px;margin-bottom:18px}
 body.send-lux .amount-row .lux-field{flex:1;margin-bottom:0}
 body.send-lux .lux-field.asset-sel{width:140px;flex:none}
 body.send-lux .lux-field .input,body.send-lux .lux-field select.input{width:100%;background:var(--lux-glass-2);border:1.5px solid var(--lux-line-2);border-radius:14px;padding:24px 16px 9px;font-size:15px;color:var(--lux-ink);transition:border-color .3s,box-shadow .35s var(--lux-ease),background .3s}
@@ -155,7 +155,7 @@ body.send-lux .reveal-lux.in{animation:none}
 
 /* Responsive */
 @media(max-width:1024px){body.send-lux .split{grid-template-columns:1fr}}
-@media(max-width:560px){body.send-lux .amount-row{flex-direction:column}body.send-lux .lux-field.asset-sel{width:100%}}
+@media(max-width:560px){body.send-lux .amount-row{flex-direction:column;gap:18px}body.send-lux .lux-field.asset-sel{width:100%}}
 @media(prefers-reduced-motion:reduce){
   body.send-lux .reveal-lux{opacity:1!important;transform:none!important;filter:none!important;animation:none!important}
   body.send-lux .step.active .step-ic{animation:none}
