@@ -38,6 +38,48 @@
   // of letting the OS route the bare wc: URI to its default handler (Trust Wallet).
   var FREIGHTER_SCHEME = 'freighterwallet';
   function freighterLink(uri) { return FREIGHTER_SCHEME + '://wc?uri=' + encodeURIComponent(uri); }
+
+  // Localized label for the same-device fallback (copy the raw wc: URI and paste it
+  // into Freighter's "Paste a WalletConnect URI" screen). Used when the auto-open
+  // deep link launches Freighter but no pairing prompt shows.
+  function copyLabel() {
+    var l = (navigator.language || 'en').slice(0, 2).toLowerCase();
+    var m = {
+      en: 'Copy link (paste it in Freighter)',
+      ru: '\u0421\u043a\u043e\u043f\u0438\u0440\u043e\u0432\u0430\u0442\u044c \u0441\u0441\u044b\u043b\u043a\u0443 (\u0432\u0441\u0442\u0430\u0432\u044c\u0442\u0435 \u0432 Freighter)',
+      uk: '\u0421\u043a\u043e\u043f\u0456\u044e\u0432\u0430\u0442\u0438 \u043f\u043e\u0441\u0438\u043b\u0430\u043d\u043d\u044f (\u0432\u0441\u0442\u0430\u0432\u0442\u0435 \u0443 Freighter)',
+      es: 'Copiar enlace (p\u00e9galo en Freighter)',
+      de: 'Link kopieren (in Freighter einf\u00fcgen)'
+    };
+    return m[l] || m.en;
+  }
+  function injectCopyButton(uri) {
+    try {
+      var qr = document.getElementById('wm-qr');
+      var card = (qr && qr.parentNode) || document.querySelector('.wm-card');
+      if (!card || document.getElementById('wm-copy')) return;
+      var b = document.createElement('button');
+      b.id = 'wm-copy';
+      b.type = 'button';
+      b.className = 'wm-cta';
+      b.style.marginTop = '10px';
+      b.textContent = copyLabel();
+      b.onclick = function () {
+        function done() { b.textContent = '\u2713 ' + copyLabel(); }
+        try {
+          if (navigator.clipboard && navigator.clipboard.writeText) {
+            navigator.clipboard.writeText(uri).then(done, function () {});
+          } else {
+            var ta = document.createElement('textarea');
+            ta.value = uri; document.body.appendChild(ta); ta.focus(); ta.select();
+            try { document.execCommand('copy'); } catch (_) {}
+            document.body.removeChild(ta); done();
+          }
+        } catch (_) {}
+      };
+      card.appendChild(b);
+    } catch (_) {}
+  }
   function addrOf(sess) {
     try { return sess.namespaces.stellar.accounts[0].split(':').pop(); } catch (_) { return null; }
   }
@@ -62,6 +104,9 @@
           var openBtn = document.getElementById('wm-open');
           if (openBtn) openBtn.onclick = function () { try { window.location.href = dl; } catch (_) {} };
         } catch (_) {}
+        // Same-device fallback: if Freighter opens without a pairing prompt, the user
+        // can copy the raw wc: URI and paste it into Freighter's "Paste a WC URI" screen.
+        injectCopyButton(uri);
         // On phones, auto-open Freighter via its deep link (not the bare wc: URI).
         if (isMobile()) { try { window.location.href = dl; } catch (_) {} }
       });
