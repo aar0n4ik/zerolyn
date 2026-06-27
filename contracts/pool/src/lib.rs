@@ -15,7 +15,7 @@ use soroban_sdk::{
 
 mod verifier {
     soroban_sdk::contractimport!(
-        file = "../../target/wasm32v1-none/release/shieldpay_verifier.wasm"
+        file = "../../target/wasm32v1-none/release/zerolyn_verifier.wasm"
     );
 }
 
@@ -58,6 +58,7 @@ impl PoolContract {
         if env.storage().instance().has(&DataKey::Admin) {
             return Err(Error::AlreadyInitialized);
         }
+        admin.require_auth();
         let s = env.storage().instance();
         s.set(&DataKey::Admin, &admin);
         s.set(&DataKey::Token, &token);

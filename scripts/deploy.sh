@@ -23,19 +23,19 @@ WASM_DIR="$ROOT/target/wasm32v1-none/release"
 
 echo "==> Deploying verifier"
 VERIFIER_ID=$(stellar contract deploy \
-  --wasm "$WASM_DIR/shieldpay_verifier.wasm" \
+  --wasm "$WASM_DIR/zerolyn_verifier.wasm" \
   --source "$SRC" --network "$NET")
 echo "   verifier: $VERIFIER_ID"
 
 echo "==> Deploying ASP allow-list"
 ASP_ID=$(stellar contract deploy \
-  --wasm "$WASM_DIR/shieldpay_asp.wasm" \
+  --wasm "$WASM_DIR/zerolyn_asp.wasm" \
   --source "$SRC" --network "$NET")
 echo "   asp: $ASP_ID"
 
 echo "==> Deploying pool"
 POOL_ID=$(stellar contract deploy \
-  --wasm "$WASM_DIR/shieldpay_pool.wasm" \
+  --wasm "$WASM_DIR/zerolyn_pool.wasm" \
   --source "$SRC" --network "$NET")
 echo "   pool: $POOL_ID"
 

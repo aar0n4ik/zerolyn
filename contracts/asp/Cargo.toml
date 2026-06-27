@@ -1,14 +1,14 @@
 [package]
-name = "shieldpay-asp"
+name = "zerolyn-asp"
 version = "0.1.0"
 edition = "2021"
-authors = ["ShieldPay (solo)"]
-description = "ASP allow-list root contract for ShieldPay compliance gating."
+authors = ["Zerolyn (solo)"]
+description = "ASP allow-list root contract for Zerolyn compliance gating."
 license = "MIT"
 
 [lib]
 crate-type = ["cdylib"]
-name = "shieldpay_asp"
+name = "zerolyn_asp"
 
 [dependencies]
 soroban-sdk = "22.0.0"

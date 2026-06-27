@@ -71,10 +71,13 @@ pub struct VerifierContract;
 #[contractimpl]
 impl VerifierContract {
     /// One-time init: store admin who may set/replace the verifying key.
+    /// Requires the admin to authorize, so the role cannot be front-run by a
+    /// third party racing the first init call.
     pub fn init(env: Env, admin: Address) -> Result<(), Error> {
         if env.storage().instance().has(&DataKey::Admin) {
             return Err(Error::AlreadyInitialized);
         }
+        admin.require_auth();
         env.storage().instance().set(&DataKey::Admin, &admin);
         Ok(())
     }

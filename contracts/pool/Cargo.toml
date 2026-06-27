@@ -1,14 +1,14 @@
 [package]
-name = "shieldpay-pool"
+name = "zerolyn-pool"
 version = "0.1.0"
 edition = "2021"
-authors = ["ShieldPay (solo)"]
-description = "Shielded USDC pool for ShieldPay: deposits, nullifiers, and proof-gated private transfers on Soroban."
+authors = ["Zerolyn (solo)"]
+description = "Shielded USDC pool for Zerolyn: deposits, nullifiers, and proof-gated private transfers on Soroban."
 license = "MIT"
 
 [lib]
 crate-type = ["cdylib"]
-name = "shieldpay_pool"
+name = "zerolyn_pool"
 
 [dependencies]
 soroban-sdk = { version = "22.0.0", features = ["alloc"] }
