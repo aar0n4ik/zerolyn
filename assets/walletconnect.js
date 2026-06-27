@@ -9,7 +9,7 @@
                      includeWalletIds:[FREIGHTER], featuredWalletIds:[FREIGHTER],
                      allWallets:'HIDE' })
      3. modal.open()
-     4. session  = await provider.connect({ namespaces: { stellar: {...} } })
+     4. session  = await provider.connect({ namespaces, optionalNamespaces })
      5. modal.close()
 
    The modal is locked to FREIGHTER ONLY: includeWalletIds limits the registry to
@@ -19,15 +19,18 @@
    tappable Freighter button that DEEP-LINKS straight into the Freighter app
    (in an external browser it shows a QR to scan with the phone).
 
-   RELAY: a real-phone diagnostic showed connect() failing with the WalletConnect
-   relay error "Subscribing to <topic> failed, please try again". Per Reown docs
-   that is a retryable relay-connectivity issue, and the current relay host is
-   wss://relay.walletconnect.org (the .com host is deprecated/blocked on some
-   networks). We therefore pin relayUrl explicitly and retry the pairing on
-   transient subscribe/relay/timeout failures with a short backoff. When the
-   subscribe keeps failing on the correct relay, the cause is the Cloud project
-   itself (invalid / rate-limited / domain-restricted), so PROJECT_ID below is a
-   freshly created Reown project.
+   NAMESPACES: require only stellar:testnet (this dapp is testnet-only and
+   Freighter Mobile only approves the network it is currently on). stellar:pubnet
+   is requested as an OPTIONAL namespace so a wallet on mainnet can still pair
+   (we then warn it is the wrong network). Putting pubnet under required
+   namespaces made Freighter reject with "Non conforming namespaces".
+
+   RELAY: connect() previously failed with "Subscribing to <topic> failed". The
+   current relay host is wss://relay.walletconnect.org (the .com host is
+   deprecated/blocked on some networks); we pin relayUrl explicitly and retry the
+   pairing on transient subscribe/relay/timeout failures with a short backoff.
+   PROJECT_ID is a Reown Cloud project; an invalid/rate-limited/domain-restricted
+   project also surfaces as subscribe failures.
 
    To avoid the ~5s delay before the sheet appears, we pre-warm BOTH the provider
    and the AppKit modal as soon as the page loads on mobile, so the first tap on
@@ -173,6 +176,9 @@
   function isUserReject(err) {
     var m = '';
     try { m = ((err && (err.message || err.reason || err.code)) || err || '') + ''; } catch (_) {}
+    // "Non conforming namespaces" is technically surfaced with a "User rejected"
+    // prefix but is NOT a user action -- exclude it so it is not swallowed.
+    if (/non conforming namespaces|don't satisfy|do not satisfy/i.test(m)) return false;
     return /reject|declin|cancel|denied|disapprov|\buser\b/i.test(m);
   }
   // The relay sometimes fails the first subscribe(s) with a retryable error
@@ -181,17 +187,21 @@
   function isRetryable(err) {
     var m = '';
     try { m = ((err && (err.message || err.reason)) || err || '') + ''; } catch (_) {}
+    if (/non conforming namespaces|don't satisfy|do not satisfy/i.test(m)) return false;
     return /subscrib|please try again|timeout|timed out|relay|socket|websocket|publish|stale|network/i.test(m);
   }
 
-  // Step 3+4: pair and await the session. We request BOTH Stellar networks so
-  // Freighter can approve on whichever it is on, then warn if it is not Testnet.
-  // Retry transient (non-user-reject) relay/subscribe failures with a short
-  // backoff before giving up.
+  // Step 3+4: pair and await the session. Require only Testnet (this dapp is
+  // testnet-only and Freighter approves the network it is on); offer Pubnet as
+  // OPTIONAL so a mainnet wallet can still pair (we then warn). Retry transient
+  // (non-user-reject) relay/subscribe failures with a short backoff.
   function pairLoop(p, tries) {
     return p.connect({
       namespaces: {
-        stellar: { methods: METHODS, chains: [CHAIN_TESTNET, CHAIN_PUBNET], events: ['accountsChanged'] }
+        stellar: { methods: METHODS, chains: [CHAIN_TESTNET], events: ['accountsChanged'] }
+      },
+      optionalNamespaces: {
+        stellar: { methods: METHODS, chains: [CHAIN_PUBNET], events: ['accountsChanged'] }
       }
     }).then(function (sess) {
       try { if (modal) modal.close(); } catch (_) {}
