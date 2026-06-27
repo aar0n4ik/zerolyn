@@ -51,8 +51,8 @@ on Stellar, which exists to move real people's and institutions' money.
 | **Proof of reserves** (demo) | A custodian is solvent (reserves ≥ liabilities), balances hidden | `pools.html` |
 
 > **The full ZK path is real end-to-end on two pages today:** `verify.html` (real prover → real
-> on-chain verification) and `send.html`, where the **"Prove this transfer"** action generates a real
-> Groth16 proof for the amount you entered and **verifies it on-chain**. The send page also performs a
+> on-chain verification) and `send.html`, where the **"Prove this transfer"** action is gated on the payment and generates a real
+> Groth16 proof for the exact amount you just sent and **verifies it on-chain**. The send page also performs a
 > real Stellar Testnet payment. The `compliance.html` / `pools.html` modules show the product experience
 > with simulated, Groth16-shaped proofs and are clearly labelled **"(demo)"** in the UI. See the honesty section below.
 
@@ -107,8 +107,8 @@ We keep the marketing honest. Here is the precise status:
   over that BLS12-381 circuit (artifacts in `assets/zk/`), then **verifies it on-chain** by calling the contract
   through Soroban RPC. The pairing actually executes inside Stellar's host; you can optionally record a real tx.
 - `send.html` does **two real things**: (1) a real Stellar Testnet payment signed in your wallet and submitted via
-  Horizon (real tx hash), and (2) **"Prove this transfer"**, which builds a real Groth16 proof for the amount you
-  entered (hidden) against your balance (hidden) and the public compliance limit, and **verifies it on-chain**.
+  Horizon (real tx hash), and (2) **"Prove this transfer"**, which builds a real Groth16 proof for the exact amount you just
+  sent (hidden) against your real balance (hidden, read from Horizon) and the public compliance limit, and **verifies it on-chain**.
 - Address validation, wallet connect (Freighter desktop + Freighter Mobile via WalletConnect), SEP-7 QR and the PDF receipt are real features.
 
 **Demo / simulated (clearly labelled in the UI)**
@@ -119,12 +119,13 @@ We keep the marketing honest. Here is the precise status:
   inside the pool via Poseidon commitments/nullifiers and a Merkle membership proof — is the **roadmap target**
   (`circuits/transfer.circom` here covers the amount/solvency/compliance portion; the commitment layer needs a
   BLS12-381-correct Poseidon). The **Pool** and **ASP** contracts are deployed scaffolding for that roadmap.
-- **Witness binding (roadmap):** the proof's `amount` and `balance` are **prover-supplied private witnesses**. The
-  circuit *soundly* proves `amount >= 1`, `amount <= balance`, and `amount <= limit`, but it does **not yet read your
-  real on-chain balance or bind the proof to the specific Stellar payment** (recipient/asset/amount). The browser
-  prover uses your displayed balance when known and **refuses** an amount above it (instead of fabricating
-  `balance = amount`). Binding the proof to settlement — a public payment commitment, or proving inside the pool's
-  `transfer` — is the top roadmap item. See `docs/ARCHITECTURE.md` §6.
+- **Witness binding:** `amount` and `balance` are prover-supplied private witnesses. On `send.html` the proof is now
+  **gated on a completed Stellar Testnet payment**, proves the **exact amount you just sent** (bound via the public
+  `paid` input, with `paid === amount` enforced in-circuit), and uses your **real on-chain balance read from Horizon**
+  (`balance_before = balance_now + amount_sent`) for the solvency statement. What remains **roadmap** is
+  cryptographically binding the proof to the specific payment *inside* the circuit (a public commitment to
+  recipient/asset/amount) and settling shielded value in the pool (Poseidon commitments / nullifiers / Merkle
+  membership). See `docs/ARCHITECTURE.md` §6.
 
 Nothing in the UI claims settled shielded value, or an on-chain-verified proof it hasn't actually produced.
 
@@ -154,11 +155,8 @@ scripts/              setup.sh, deploy.sh, vk_to_args.js, proof_to_args.js
 docs/ARCHITECTURE.md  Architecture notes
 ```
 
-> **Naming:** the product and on-chain brand is **Zerolyn**. The Git repository is named `zerolyn`
-> and the compiled Soroban wasm crates/artifacts are still named `zerolyn_*` (see `scripts/deploy.sh`).
-> These are legacy build names for the *same* contracts; the crate rename is purely cosmetic and is deferred
-> to avoid churning the already-deployed-and-verified build. When you rename, update the crate `name` in each
-> `contracts/*/Cargo.toml`, the wasm paths in `scripts/deploy.sh`, and any `contractimport!` macro path.
+> **Naming:** the product, Git repository, Soroban crates (`zerolyn_verifier` / `zerolyn_pool` / `zerolyn_asp`)
+> and compiled wasm artifacts are all named **Zerolyn**. The deployed Testnet contract IDs above are unchanged.
 
 ## Run locally
 
