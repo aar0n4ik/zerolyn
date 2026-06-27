@@ -278,7 +278,11 @@
   // wire before the browser tab is backgrounded. The visible button is the
   // reliable fallback if the auto-open is blocked.
   function requestWithPrompt(p, method, xdr) {
-    var req = p.request({ chainId: CHAIN, request: { method: method, params: { xdr: xdr } } }, CHAIN);
+    // UniversalProvider.request signature is request({ method, params }, chain)
+    // -- NOT the SignClient { topic, chainId, request } shape. Passing the wrong
+    // shape sent method/params as undefined, so Freighter got an empty request
+    // it ignored (the app just opened with nothing to approve).
+    var req = p.request({ method: method, params: { xdr: xdr } }, CHAIN);
     if (isMobile()) {
       showSignPrompt();
       setTimeout(function () { try { window.location.href = walletRedirect(); } catch (_) {} }, 700);
