@@ -24,7 +24,10 @@
    that is a retryable relay-connectivity issue, and the current relay host is
    wss://relay.walletconnect.org (the .com host is deprecated/blocked on some
    networks). We therefore pin relayUrl explicitly and retry the pairing on
-   transient subscribe/relay/timeout failures with a short backoff.
+   transient subscribe/relay/timeout failures with a short backoff. When the
+   subscribe keeps failing on the correct relay, the cause is the Cloud project
+   itself (invalid / rate-limited / domain-restricted), so PROJECT_ID below is a
+   freshly created Reown project.
 
    To avoid the ~5s delay before the sheet appears, we pre-warm BOTH the provider
    and the AppKit modal as soon as the page loads on mobile, so the first tap on
@@ -36,7 +39,7 @@
 (function () {
   'use strict';
 
-  var PROJECT_ID = '8270edd9a0e826b51a7729bac80a21ff';
+  var PROJECT_ID = 'fd39b4af1ed1f663d938a721436a7ec0';
   // Current WalletConnect relay endpoint. The legacy relay.walletconnect.COM
   // host is deprecated and blocked on some networks, which surfaces as
   // "Subscribing to <topic> failed". Pin the .ORG host explicitly.
