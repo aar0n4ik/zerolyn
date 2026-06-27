@@ -1,5 +1,5 @@
 window.I18N=window.I18N||{};window.I18N.es={
-nav_home:'Inicio',nav_send:'Transferencia privada',nav_compliance:'Cumplimiento zk',nav_pools:'Pools de privacidad',nav_verify:'Verificador de pruebas',nav_ecosystem:'Ecosistema',nav_cta:'Abrir app',
+nav_home:'Inicio',nav_send:'Transferir',nav_compliance:'Cumplimiento zk',nav_pools:'Pools',nav_verify:'Verificar',nav_ecosystem:'Ecosistema',nav_cta:'Abrir app',
 lang_changed:'Idioma cambiado a Espa\u00f1ol',soc_soon:'Enlace disponible pronto',
 ft_desc:'Pagos privados que cumplen la normativa en Stellar. Privacidad por defecto, auditable cuando haga falta \u2014 con pruebas de conocimiento cero y Soroban.',
 ft_product:'Producto',ft_ecosystem:'Ecosistema',ft_resources:'Recursos',
