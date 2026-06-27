@@ -1,16 +1,19 @@
 pragma circom 2.1.6;
 
-// Zerolyn — minimal BLS12-381 demo circuit.
+// Zerolyn — minimal BLS12-381 demo circuit (standalone teaching example).
 //
 // Proves knowledge of a secret `x` such that x^3 + x + 5 == out, WITHOUT
 // revealing x. `out` is the single public input.
 //
-// This is the circuit whose Groth16 proof is verified ON-CHAIN by the Soroban
-// verifier contract using Stellar's native BLS12-381 host functions (Protocol
-// 22). It is intentionally small so the full "prove in browser -> verify
-// on-chain" path is real and demonstrable today. The larger shielded-transfer
-// circuit (transfer.circom) is the roadmap target and needs a BLS12-381-correct
-// Poseidon before it can use this same verifier.
+// NOTE: this file is a tiny reference example only — it is NOT the live path.
+// The circuit actually verified ON-CHAIN today is `circuits/transfer.circom`
+// (the hidden-amount solvency + compliance statement). Its Groth16 proof is
+// checked by the Soroban verifier using Stellar's native BLS12-381 host
+// functions (Protocol 22). transfer.circom uses only circomlib's
+// field-agnostic comparators (Num2Bits + arithmetic), so it requires NO
+// curve-specific Poseidon and runs on BLS12-381 as-is. A fully shielded pool
+// (Poseidon commitments / nullifiers / Merkle membership) is the roadmap
+// target — see docs/ARCHITECTURE.md.
 //
 // Build:
 //   circom circuits/demo.circom --r1cs --wasm --sym --prime bls12381 -o build
