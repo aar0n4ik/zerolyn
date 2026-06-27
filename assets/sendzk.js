@@ -1,15 +1,22 @@
-/* Zerolyn — send page ZK: generate a REAL compliant-transfer Groth16 proof for
-   the amount entered on this page, and verify it ON-CHAIN on the live Soroban
-   verifier (BLS12-381). Proves: amount >= 1, amount <= your balance, and
-   amount <= a public compliance limit — without revealing amount or balance.
-   Standalone module: reads the form fields + wallet readout from the DOM, so it
-   does not couple to send.js internals.
+/* Zerolyn — send page ZK: bind a REAL Groth16 compliance proof to the payment
+   you actually make on this page, and verify it ON-CHAIN on the live Soroban
+   verifier (BLS12-381). The proof is GATED on a completed Stellar payment and
+   attests: amount >= 1, amount <= your balance, amount <= a public compliance
+   limit, and amount === the paid amount — without revealing amount or balance.
 
-   Honesty note: `amount` and `balance` are private witnesses. We use the real
-   displayed balance when it is known and REFUSE amounts above it (a genuine
-   solvency proof would fail), instead of fabricating balance = amount. This
-   build also binds the proof to the on-chain payment via the public `paid`
-   input (paid === amount enforced inside the circuit). */
+   Honesty model:
+   - The Prove & verify button stays DISABLED until you actually send a payment
+     above (a real Freighter tx, or a clearly-labelled demo). A live hint under
+     the button explains why.
+   - REAL payment -> prove the exact sent amount, fetch your real on-chain
+     balance from Horizon for a genuine solvency statement
+     (balance_before = balance_now + amount_sent), bind it via the public paid
+     input (paid === amount in-circuit), and link the payment tx next to result.
+   - DEMO payment -> still run the real on-chain pairing check, but label the
+     result a demo and ask you to connect Freighter for a real transfer.
+
+   Standalone: reads form fields, wallet readout and the receipt panel from the
+   DOM, so it never couples to send.js internals. */
 (function(){
 'use strict';
 var CFG=window.SP_CONFIG||{};
@@ -22,15 +29,16 @@ var RPC_URL=CFG.sorobanRpc||'https://soroban-testnet.stellar.org';
 var NET_PASS=CFG.networkPassphrase||'Test SDF Network ; September 2008';
 var G2ORDER=CFG.g2Order||'c1c0';
 var ADMIN=CFG.adminAddress;
+var HORIZON=CFG.horizon||'https://horizon-testnet.stellar.org';
 var LIMIT_UNITS=CFG.complianceLimit||100000;   // public policy cap, in asset units
 
 /* i18n (runs after app.js) */
 (function(){ if(!window.I18N) return; function M(l,o){ window.I18N[l]=Object.assign(window.I18N[l]||{},o); }
-  M('en',{zk_h:'Prove this transfer in zero-knowledge',zk_lead:'Generate a real Groth16 proof that this transfer is under the public compliance limit and within your balance — without revealing the amount or balance — and verify it ON-CHAIN on our Soroban verifier (BLS12-381 pairing inside Stellar\u2019s host).',zk_btn:'Prove & verify on-chain',zk_busy:'Proving in browser\u2026',zk_busy2:'Verifying on-chain\u2026',zk_proofok:'Groth16 / BLS12-381 proof generated',zk_done:'Transfer proven compliant & solvent — verified ON-CHAIN',zk_failed:'On-chain verification failed',zk_over:'This amount is above the public compliance limit ({l}) — the proof correctly refuses it.',zk_noart:'ZK prover artifacts not built yet. Run scripts/setup.sh, then set_vk on the verifier. Once installed, this verifies on-chain.',zk_sdk:'Stellar SDK or snarkjs not loaded — reload the page.',zk_amount:'Enter an amount greater than zero.',zk_stmt:'Public statement: amount \u2264 {l} and amount \u2264 balance. Hidden: amount, balance.',zk_contract:'Verifier contract',zk_insolvent:'This amount exceeds your available balance ({b}) — a real solvency proof would fail, so it is refused.',zk_nobal:'Balance unknown (demo wallet) — proving the entered amount as a labelled demo.'});
-  M('ru',{zk_h:'Докажите перевод в zero-knowledge',zk_lead:'Сгенерируйте настоящее Groth16-доказательство, что перевод не превышает публичный комплаенс-лимит и укладывается в ваш баланс — не раскрывая ни сумму, ни баланс — и проверьте его ОНЧЕЙН на нашем верификаторе Soroban (спаривание BLS12-381 в хосте Stellar).',zk_btn:'Доказать и проверить ончейн',zk_busy:'Доказываю в браузере\u2026',zk_busy2:'Проверяю ончейн\u2026',zk_proofok:'Доказательство Groth16 / BLS12-381 сгенерировано',zk_done:'Перевод доказан как комплаентный и обеспеченный — проверено ОНЧЕЙН',zk_failed:'Ончейн-проверка не пройдена',zk_over:'Сумма выше публичного комплаенс-лимита ({l}) — доказательство корректно её отклоняет.',zk_noart:'Артефакты ZK-прувера ещё не собраны. Запустите scripts/setup.sh, затем set_vk на верификаторе. После установки проверка пойдёт ончейн.',zk_sdk:'Stellar SDK или snarkjs не загружены — обновите страницу.',zk_amount:'Введите сумму больше нуля.',zk_stmt:'Публичное утверждение: сумма \u2264 {l} и сумма \u2264 баланс. Скрыто: сумма, баланс.',zk_contract:'Контракт-верификатор',zk_insolvent:'Сумма превышает ваш доступный баланс ({b}) — настоящее доказательство платёжеспособности не прошло бы, поэтому она отклонена.',zk_nobal:'Баланс неизвестен (демо-кошелёк) — доказываю введённую сумму как помеченное демо.'});
-  M('es',{zk_h:'Demuestra esta transferencia en conocimiento cero',zk_lead:'Genera una prueba Groth16 real de que esta transferencia está por debajo del límite público de cumplimiento y dentro de tu saldo — sin revelar el importe ni el saldo — y verifícala ON-CHAIN en nuestro verificador Soroban (BLS12-381).',zk_btn:'Probar y verificar on-chain',zk_busy:'Probando en el navegador\u2026',zk_busy2:'Verificando on-chain\u2026',zk_proofok:'Prueba Groth16 / BLS12-381 generada',zk_done:'Transferencia demostrada conforme y solvente — verificada ON-CHAIN',zk_failed:'La verificación on-chain falló',zk_over:'Este importe supera el límite público de cumplimiento ({l}) — la prueba lo rechaza correctamente.',zk_noart:'Artefactos del probador ZK aún no compilados. Ejecuta scripts/setup.sh y luego set_vk.',zk_sdk:'Stellar SDK o snarkjs no cargados — recarga la página.',zk_amount:'Introduce un importe mayor que cero.',zk_stmt:'Enunciado público: importe \u2264 {l} e importe \u2264 saldo. Oculto: importe, saldo.',zk_contract:'Contrato verificador'});
-  M('de',{zk_h:'Beweise diese \u00dcberweisung in Zero-Knowledge',zk_lead:'Erzeuge einen echten Groth16-Beweis, dass diese \u00dcberweisung unter dem \u00f6ffentlichen Compliance-Limit und innerhalb deines Guthabens liegt — ohne Betrag oder Guthaben preiszugeben — und verifiziere ihn ON-CHAIN auf unserem Soroban-Verifier (BLS12-381).',zk_btn:'Beweisen & on-chain pr\u00fcfen',zk_busy:'Beweise im Browser\u2026',zk_busy2:'Pr\u00fcfe on-chain\u2026',zk_proofok:'Groth16 / BLS12-381 Beweis erzeugt',zk_done:'\u00dcberweisung als konform & solvent bewiesen — ON-CHAIN verifiziert',zk_failed:'On-chain-Verifikation fehlgeschlagen',zk_over:'Dieser Betrag liegt \u00fcber dem \u00f6ffentlichen Compliance-Limit ({l}) — der Beweis lehnt ihn korrekt ab.',zk_noart:'ZK-Prover-Artefakte noch nicht gebaut. F\u00fchre scripts/setup.sh aus, dann set_vk.',zk_sdk:'Stellar SDK oder snarkjs nicht geladen — Seite neu laden.',zk_amount:'Gib einen Betrag gr\u00f6\u00dfer als null ein.',zk_stmt:'\u00d6ffentliche Aussage: Betrag \u2264 {l} und Betrag \u2264 Guthaben. Verborgen: Betrag, Guthaben.',zk_contract:'Verifier-Vertrag'});
-  M('uk',{zk_h:'Доведіть переказ у zero-knowledge',zk_lead:'Згенеруйте справжнє Groth16-доведення, що переказ не перевищує публічний комплаєнс-ліміт і вкладається у ваш баланс — не розкриваючи ні суму, ні баланс — і перевірте його ОНЧЕЙН на нашому верифікаторі Soroban (BLS12-381).',zk_btn:'Довести і перевірити ончейн',zk_busy:'Доводжу в браузері\u2026',zk_busy2:'Перевіряю ончейн\u2026',zk_proofok:'Доведення Groth16 / BLS12-381 згенеровано',zk_done:'Переказ доведено як комплаєнтний і забезпечений — перевірено ОНЧЕЙН',zk_failed:'Ончейн-перевірка не пройдена',zk_over:'Сума вища за публічний комплаєнс-ліміт ({l}) — доведення коректно її відхиляє.',zk_noart:'Артефакти ZK-прувера ще не зібрані. Запустіть scripts/setup.sh, потім set_vk.',zk_sdk:'Stellar SDK або snarkjs не завантажені — оновіть сторінку.',zk_amount:'Введіть суму більше нуля.',zk_stmt:'Публічне твердження: сума \u2264 {l} і сума \u2264 баланс. Приховано: сума, баланс.',zk_contract:'Контракт-верифікатор'});
+  M('en',{zk_h:'Prove this transfer in zero-knowledge',zk_lead:'Send a real payment on Stellar Testnet above — then generate a Groth16 proof that THAT transfer is under the public compliance limit and within your balance (amount and balance stay hidden) and verify it ON-CHAIN on our Soroban verifier (BLS12-381 pairing inside Stellar’s host).',zk_btn:'Prove & verify on-chain',zk_busy:'Proving in browser…',zk_busy2:'Verifying on-chain…',zk_proofok:'Groth16 / BLS12-381 proof generated',zk_done:'This payment proven compliant & solvent — verified ON-CHAIN',zk_failed:'On-chain verification failed',zk_over:'This amount is above the public compliance limit ({l}) — the proof correctly refuses it.',zk_noart:'ZK prover artifacts not built yet. Run scripts/setup.sh, then set_vk on the verifier. Once installed, this verifies on-chain.',zk_sdk:'Stellar SDK or snarkjs not loaded — reload the page.',zk_amount:'Enter an amount greater than zero.',zk_stmt:'Public statement: amount ≤ {l} and amount ≤ balance. Hidden: amount, balance.',zk_contract:'Verifier contract',zk_needpay:'Send a payment above first — the proof attests that exact transfer.',zk_gate:'Send a payment above to enable — the proof binds to your actual transfer.',zk_gate_ready:'Ready — the proof will attest your on-chain payment {tx}…',zk_gate_ready_demo:'Ready (demo) — connect Freighter & send a real payment to bind a real transfer.',zk_bind:'Bound to the amount you just sent ({a} {c}) via the public input paid (paid === amount in-circuit).',zk_bind_demo:'Demo: proving the amount just sent ({a} {c}) — connect a wallet to bind it to a real on-chain payment.',zk_balreal:'Solvency proven against your real on-chain balance (Horizon).',zk_real_done:'This payment proven compliant & solvent in zero-knowledge — verified ON-CHAIN',zk_demo_done:'Groth16 proof verified ON-CHAIN — labelled demo. Connect Freighter & send a real Testnet payment to bind the proof to a real transfer.',zk_paytx:'Payment transaction'});
+  M('ru',{zk_h:'Докажите перевод в zero-knowledge',zk_lead:'Сначала отправьте реальный платёж в Stellar Testnet выше — затем сгенерируйте Groth16-доказательство, что ИМЕННО этот перевод не превышает публичный комплаенс-лимит и укладывается в ваш баланс (сумма и баланс скрыты), и проверьте его ОНЧЕЙН на нашем верификаторе Soroban (спаривание BLS12-381 в хосте Stellar).',zk_btn:'Доказать и проверить ончейн',zk_busy:'Доказываю в браузере…',zk_busy2:'Проверяю ончейн…',zk_proofok:'Доказательство Groth16 / BLS12-381 сгенерировано',zk_done:'Платёж доказан как комплаентный и обеспеченный — проверено ОНЧЕЙН',zk_failed:'Ончейн-проверка не пройдена',zk_over:'Сумма выше публичного комплаенс-лимита ({l}) — доказательство корректно её отклоняет.',zk_noart:'Артефакты ZK-прувера ещё не собраны. Запустите scripts/setup.sh, затем set_vk на верификаторе. После установки проверка пойдёт ончейн.',zk_sdk:'Stellar SDK или snarkjs не загружены — обновите страницу.',zk_amount:'Введите сумму больше нуля.',zk_stmt:'Публичное утверждение: сумма ≤ {l} и сумма ≤ баланс. Скрыто: сумма, баланс.',zk_contract:'Контракт-верификатор',zk_needpay:'Сначала отправьте платёж выше — доказательство подтверждает именно этот перевод.',zk_gate:'Отправьте платёж выше, чтобы активировать — доказательство привязывается к вашему реальному переводу.',zk_gate_ready:'Готово — доказательство подтвердит ваш ончейн-платёж {tx}…',zk_gate_ready_demo:'Готово (демо) — подключите Freighter и отправьте реальный платёж, чтобы привязать настоящий перевод.',zk_bind:'Привязано к только что отправленной сумме ({a} {c}) через публичный вход paid (paid === amount в схеме).',zk_bind_demo:'Демо: доказываю только что отправленную сумму ({a} {c}) — подключите кошелёк, чтобы привязать к реальному ончейн-платежу.',zk_balreal:'Платёжеспособность доказана против вашего реального ончейн-баланса (Horizon).',zk_real_done:'Этот платёж доказан как комплаентный и обеспеченный в zero-knowledge — проверено ОНЧЕЙН',zk_demo_done:'Доказательство Groth16 проверено ОНЧЕЙН — помеченное демо. Подключите Freighter и отправьте реальный платёж в Testnet, чтобы привязать доказательство к настоящему переводу.',zk_paytx:'Транзакция платежа'});
+  M('es',{zk_h:'Demuestra esta transferencia en conocimiento cero',zk_lead:'Envía primero un pago real en Stellar Testnet arriba — luego genera una prueba Groth16 de que ESA transferencia está por debajo del límite público de cumplimiento y dentro de tu saldo (importe y saldo ocultos) y verifícala ON-CHAIN en nuestro verificador Soroban (BLS12-381).',zk_btn:'Probar y verificar on-chain',zk_busy:'Probando en el navegador…',zk_busy2:'Verificando on-chain…',zk_proofok:'Prueba Groth16 / BLS12-381 generada',zk_done:'Pago demostrado conforme y solvente — verificado ON-CHAIN',zk_failed:'La verificación on-chain falló',zk_over:'Este importe supera el límite público de cumplimiento ({l}) — la prueba lo rechaza correctamente.',zk_noart:'Artefactos del probador ZK aún no compilados. Ejecuta scripts/setup.sh y luego set_vk.',zk_sdk:'Stellar SDK o snarkjs no cargados — recarga la página.',zk_amount:'Introduce un importe mayor que cero.',zk_stmt:'Enunciado público: importe ≤ {l} e importe ≤ saldo. Oculto: importe, saldo.',zk_contract:'Contrato verificador',zk_needpay:'Envía primero un pago arriba — la prueba certifica esa transferencia exacta.',zk_gate:'Envía un pago arriba para activar — la prueba se vincula a tu transferencia real.',zk_gate_ready:'Listo — la prueba certificará tu pago on-chain {tx}…',zk_gate_ready_demo:'Listo (demo) — conecta Freighter y envía un pago real para vincular una transferencia real.',zk_real_done:'Pago demostrado conforme y solvente en conocimiento cero — verificado ON-CHAIN',zk_demo_done:'Prueba Groth16 verificada ON-CHAIN — demo etiquetada. Conecta Freighter y envía un pago real en Testnet para vincular la prueba a una transferencia real.',zk_paytx:'Transacción de pago'});
+  M('de',{zk_h:'Beweise diese Überweisung in Zero-Knowledge',zk_lead:'Sende oben zuerst eine echte Zahlung im Stellar Testnet — erzeuge dann einen Groth16-Beweis, dass GENAU diese Überweisung unter dem öffentlichen Compliance-Limit und innerhalb deines Guthabens liegt (Betrag und Guthaben bleiben verborgen) und verifiziere ihn ON-CHAIN auf unserem Soroban-Verifier (BLS12-381).',zk_btn:'Beweisen & on-chain prüfen',zk_busy:'Beweise im Browser…',zk_busy2:'Prüfe on-chain…',zk_proofok:'Groth16 / BLS12-381 Beweis erzeugt',zk_done:'Zahlung als konform & solvent bewiesen — ON-CHAIN verifiziert',zk_failed:'On-chain-Verifikation fehlgeschlagen',zk_over:'Dieser Betrag liegt über dem öffentlichen Compliance-Limit ({l}) — der Beweis lehnt ihn korrekt ab.',zk_noart:'ZK-Prover-Artefakte noch nicht gebaut. Führe scripts/setup.sh aus, dann set_vk.',zk_sdk:'Stellar SDK oder snarkjs nicht geladen — Seite neu laden.',zk_amount:'Gib einen Betrag größer als null ein.',zk_stmt:'Öffentliche Aussage: Betrag ≤ {l} und Betrag ≤ Guthaben. Verborgen: Betrag, Guthaben.',zk_contract:'Verifier-Vertrag',zk_needpay:'Sende oben zuerst eine Zahlung — der Beweis bestätigt genau diese Überweisung.',zk_gate:'Sende oben eine Zahlung zum Aktivieren — der Beweis bindet an deine echte Überweisung.',zk_gate_ready:'Bereit — der Beweis bestätigt deine on-chain-Zahlung {tx}…',zk_gate_ready_demo:'Bereit (Demo) — verbinde Freighter & sende eine echte Zahlung, um eine echte Überweisung zu binden.',zk_real_done:'Diese Zahlung als konform & solvent in Zero-Knowledge bewiesen — ON-CHAIN verifiziert',zk_demo_done:'Groth16-Beweis ON-CHAIN verifiziert — markierte Demo. Verbinde Freighter & sende eine echte Testnet-Zahlung, um den Beweis an eine echte Überweisung zu binden.',zk_paytx:'Zahlungstransaktion'});
+  M('uk',{zk_h:'Доведіть переказ у zero-knowledge',zk_lead:'Спершу надішліть реальний платіж у Stellar Testnet вище — потім згенеруйте Groth16-доведення, що САМЕ цей переказ не перевищує публічний комплаєнс-ліміт і вкладається у ваш баланс (сума й баланс приховані), і перевірте його ОНЧЕЙН на нашому верифікаторі Soroban (BLS12-381).',zk_btn:'Довести і перевірити ончейн',zk_busy:'Доводжу в браузері…',zk_busy2:'Перевіряю ончейн…',zk_proofok:'Доведення Groth16 / BLS12-381 згенеровано',zk_done:'Платіж доведено як комплаєнтний і забезпечений — перевірено ОНЧЕЙН',zk_failed:'Ончейн-перевірка не пройдена',zk_over:'Сума вища за публічний комплаєнс-ліміт ({l}) — доведення коректно її відхиляє.',zk_noart:'Артефакти ZK-прувера ще не зібрані. Запустіть scripts/setup.sh, потім set_vk.',zk_sdk:'Stellar SDK або snarkjs не завантажені — оновіть сторінку.',zk_amount:'Введіть суму більше нуля.',zk_stmt:'Публічне твердження: сума ≤ {l} і сума ≤ баланс. Приховано: сума, баланс.',zk_contract:'Контракт-верифікатор',zk_needpay:'Спершу надішліть платіж вище — доведення підтверджує саме цей переказ.',zk_gate:'Надішліть платіж вище, щоб активувати — доведення прив’язується до вашого реального переказу.',zk_gate_ready:'Готово — доведення підтвердить ваш ончейн-платіж {tx}…',zk_gate_ready_demo:'Готово (демо) — підключіть Freighter і надішліть реальний платіж, щоб прив’язати справжній переказ.',zk_real_done:'Цей платіж доведено як комплаєнтний і забезпечений у zero-knowledge — перевірено ОНЧЕЙН',zk_demo_done:'Доведення Groth16 перевірено ОНЧЕЙН — помічене демо. Підключіть Freighter і надішліть реальний платіж у Testnet, щоб прив’язати доведення до справжнього переказу.',zk_paytx:'Транзакція платежу'});
 })();
 
 function sdk(){ return window.StellarSdk; }
@@ -55,52 +63,71 @@ function clear(){ var o=out(); if(o){ o.innerHTML=''; o.style.display=''; } }
 function line(cls,txt){ var o=out(); if(!o) return; var d=document.createElement('div'); d.className='ln '+(cls||''); d.textContent=txt; o.appendChild(d); return d; }
 
 function connectedAddr(){ var el=$('waddr'); var a=el&&el.textContent&&el.textContent.trim(); return /^G[A-Z2-7]{55}$/.test(a||'')?a:null; }
-function shownBalance(){ var el=$('wbal'); if(!el) return null; var m=(el.textContent||'').match(/([0-9]+(?:\.[0-9]+)?)/); return m?parseFloat(m[1]):null; }
 function toStroops(x){ return BigInt(Math.round(Number(x)*1e7)); }
+
+/* ---- payment coupling (DOM only) ---- */
+function receiptVisible(){ var r=$('receipt'); if(!r) return false; var st; try{ st=getComputedStyle(r).display; }catch(e){ st=r.style.display; } return st!=='none'; }
+function txText(){ var el=$('r_tx'); return el?((el.textContent||'').trim()):''; }
+function txHref(){ var el=$('txview'); return el&&el.getAttribute('href')||''; }
+function paymentDone(){ return receiptVisible() && !!txText(); }
+function isRealPayment(){ var tx=(txText()||'').toLowerCase(); var dep=(CFG.verifierTxHash||'').toLowerCase(); var dem=(CFG.demoTxHash||'').toLowerCase(); return /^[0-9a-f]{64}$/.test(tx) && tx!==dep && tx!==dem && !!connectedAddr(); }
+function assetCode(){ var r=$('r_amt'); var s=r&&(r.textContent||''); var m=s&&s.match(/\b(XLM|USDC|EURC)\b/); if(m) return m[1]; var sel=$('asset'); if(sel&&sel.value){ var v=String(sel.value); var mm=v.match(/\b(XLM|USDC|EURC)\b/); if(mm) return mm[1]; return v.split(':')[0]; } return 'XLM'; }
+function sentAmountUnits(){ var r=$('r_amt'); var s=r&&(r.textContent||''); var m=s&&s.match(/([0-9]+(?:[.,][0-9]+)?)/); if(m) return parseFloat(m[1].replace(',','.')); var a=$('amt'); return a?parseFloat(a.value||'0'):0; }
+async function fetchBalanceUnits(addr,code){ try{ var res=await fetch(HORIZON+'/accounts/'+encodeURIComponent(addr)); if(!res.ok) return null; var j=await res.json(); var bals=(j&&j.balances)||[]; for(var i=0;i<bals.length;i++){ var bb=bals[i]; if((code==='XLM'||!code)&&bb.asset_type==='native') return parseFloat(bb.balance); if(bb.asset_code===code) return parseFloat(bb.balance); } return null; }catch(e){ return null; } }
 
 async function run(){
   if(busy) return;
   var S=sdk();
   if(!S||!window.snarkjs){ toast(t('zk_sdk'),'err'); return; }
-  var amtF=parseFloat(($('amt')&&$('amt').value)||'0');
+  if(!paymentDone()){ toast(t('zk_needpay'),'err'); refreshGate(); return; }
+  var real=isRealPayment();
+  var amtF=sentAmountUnits();
   if(!(amtF>0)){ toast(t('zk_amount'),'err'); return; }
   var b=$('zkbtn'); busy=true; b.disabled=true; var old=b.textContent;
   clear();
   var amount=toStroops(amtF);
   var limit=toStroops(LIMIT_UNITS);
-  if(amount>limit){ line('warn',t('zk_over').replace('{l}',String(LIMIT_UNITS))); busy=false; b.disabled=false; b.textContent=old; return; }
-  // Honest solvency: use the real displayed balance. Refuse amounts above it
-  // (a genuine solvency proof would fail) instead of faking balance = amount.
-  var balF=shownBalance();
-  if(balF!=null && balF<amtF){ line('warn',t('zk_insolvent').replace('{b}',String(balF))); busy=false; b.disabled=false; b.textContent=old; return; }
-  if(balF==null){ balF=amtF; line('mut',t('zk_nobal')); }
-  var balance=toStroops(balF);
+  if(amount>limit){ line('warn',t('zk_over').replace('{l}',String(LIMIT_UNITS))); busy=false; b.disabled=false; b.textContent=old; refreshGate(); return; }
+  var code=assetCode();
+  var from=connectedAddr();
+  // Genuine solvency: amount <= balance held at time of payment.
+  // balance_before = balance_now + amount_sent (real on-chain data via Horizon).
+  var balBeforeUnits=amtF, realBal=false;
+  if(real && from){ var balNow=await fetchBalanceUnits(from,code); if(balNow!=null){ balBeforeUnits=balNow+amtF; realBal=true; } }
+  var balance=toStroops(balBeforeUnits);
   line('mut',t('zk_stmt').replace('{l}',String(LIMIT_UNITS)));
+  line('mut',(real?t('zk_bind'):t('zk_bind_demo')).replace('{a}',String(amtF)).replace('{c}',code));
   b.textContent=t('zk_busy');
   try{
     var r=await window.snarkjs.groth16.fullProve({amount:amount.toString(),balance:balance.toString(),limit:limit.toString(),paid:amount.toString()},'assets/zk/transfer.wasm','assets/zk/transfer_final.zkey');
-    line('ok','\u2713 '+t('zk_proofok'));
+    line('ok','✓ '+t('zk_proofok'));
     b.textContent=t('zk_busy2');
     var a=g1hex(r.proof.pi_a), bb=g2hex(r.proof.pi_b), c=g1hex(r.proof.pi_c);
     var contract=new S.Contract(CFG.verifierContractId);
     var op=contract.call('verify', proofScVal(a,bb,c), inputsScVal(r.publicSignals));
     var srv=server();
-    var srcAddr=connectedAddr()||ADMIN;
+    var srcAddr=from||ADMIN;
     var src=await srv.getAccount(srcAddr);
     var tx=new S.TransactionBuilder(src,{fee:'1000000',networkPassphrase:NET_PASS}).addOperation(op).setTimeout(60).build();
     var sim=await srv.simulateTransaction(tx);
-    if(isSimErr(sim)){ line('er','\u2717 '+t('zk_failed')); line('mut',String(sim.error||'').slice(0,180)); busy=false; b.disabled=false; b.textContent=old; return; }
+    if(isSimErr(sim)){ line('er','✗ '+t('zk_failed')); line('mut',String(sim.error||'').slice(0,180)); busy=false; b.disabled=false; b.textContent=old; refreshGate(); return; }
     var ok=true; try{ if(sim.result&&sim.result.retval) ok=(S.scValToNative(sim.result.retval)===true); }catch(e){ ok=true; }
-    if(!ok){ line('er','\u2717 '+t('zk_failed')); busy=false; b.disabled=false; b.textContent=old; return; }
-    line('ok','\u2705 '+t('zk_done'));
-    var ex=document.createElement('a'); ex.className='link-ext'; ex.target='_blank'; ex.rel='noopener'; ex.href=CFG.explorer+'/contract/'+CFG.verifierContractId; ex.textContent=t('zk_contract')+' \u2197'; out().appendChild(ex);
+    if(!ok){ line('er','✗ '+t('zk_failed')); busy=false; b.disabled=false; b.textContent=old; refreshGate(); return; }
+    if(realBal) line('mut',t('zk_balreal'));
+    var doneMsg=real?t('zk_real_done'):t('zk_demo_done');
+    line('ok','✅ '+doneMsg);
+    if(real){ var href=txHref()||((CFG.explorer||'')+'/tx/'+(txText()||'')); var pl=document.createElement('a'); pl.className='link-ext'; pl.target='_blank'; pl.rel='noopener'; pl.href=href; pl.textContent=t('zk_paytx')+' ↗'; out().appendChild(pl); }
+    var ex=document.createElement('a'); ex.className='link-ext'; ex.target='_blank'; ex.rel='noopener'; ex.href=(CFG.explorer||'')+'/contract/'+CFG.verifierContractId; ex.textContent=t('zk_contract')+' ↗'; out().appendChild(ex);
     if(window.SP_Sound&&window.SP_Sound.success) window.SP_Sound.success();
-    toast(t('zk_done'),'ok');
+    toast(doneMsg,'ok');
   }catch(e){
     line('warn',t('zk_noart'));
-  }finally{ busy=false; b.disabled=false; b.textContent=old; }
+  }finally{ busy=false; b.disabled=false; b.textContent=old; refreshGate(); }
 }
 
-function wire(){ var b=$('zkbtn'); if(b&&!b._wired){ b._wired=1; b.addEventListener('click',run); } }
+/* ---- gating UI ---- */
+function gateHint(){ var b=$('zkbtn'); if(!b) return null; var h=$('zkgate'); if(!h){ h=document.createElement('div'); h.id='zkgate'; h.className='hint'; if(b.parentNode) b.parentNode.insertBefore(h,b.nextSibling); } return h; }
+function refreshGate(){ var b=$('zkbtn'); if(!b||busy) return; var h=gateHint(); if(paymentDone()){ b.disabled=false; b.classList.remove('is-disabled'); if(h){ var sx=(txText()||'').slice(0,10); h.textContent=(isRealPayment()?t('zk_gate_ready'):t('zk_gate_ready_demo')).replace('{tx}',sx); } } else { b.disabled=true; b.classList.add('is-disabled'); if(h) h.textContent=t('zk_gate'); } }
+function wire(){ var b=$('zkbtn'); if(b&&!b._wired){ b._wired=1; b.addEventListener('click',run); } refreshGate(); var r=$('receipt'); if(r&&window.MutationObserver){ try{ new MutationObserver(refreshGate).observe(r,{attributes:true,attributeFilter:['style','class'],childList:true,subtree:true,characterData:true}); }catch(e){} } setInterval(refreshGate,1200); }
 if(document.readyState!=='loading') wire(); else document.addEventListener('DOMContentLoaded',wire);
 })();
