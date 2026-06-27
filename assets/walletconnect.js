@@ -6,15 +6,18 @@
      1. provider = UniversalProvider.init({ projectId, metadata })
      2. modal    = createAppKit({ projectId, networks:[mainnet],
                      universalProvider: provider, manualWCControl: true,
-                     featuredWalletIds: [FREIGHTER] })
+                     includeWalletIds:[FREIGHTER], featuredWalletIds:[FREIGHTER],
+                     allWallets:'HIDE' })
      3. modal.open()
      4. session  = await provider.connect({ namespaces: { stellar: {...} } })
      5. modal.close()
 
-   The Reown/AppKit modal is the interactive UI that lists Freighter in the
-   featured row and DEEP-LINKS into the Freighter app when tapped (in Freighter's
-   in-app browser) or shows a QR (external browser). This is what makes the
-   connection actually complete on mobile.
+   The modal is locked to FREIGHTER ONLY: includeWalletIds limits the registry to
+   Freighter, allWallets:'HIDE' removes the "All Wallets" button, and
+   featuredWalletIds keeps Freighter in the featured row (required together with
+   includeWalletIds, per reown-com/appkit#3128). On mobile this renders a single
+   tappable Freighter button that DEEP-LINKS straight into the Freighter app
+   (in an external browser it shows a QR to scan with the phone).
 
    To avoid the ~5s delay before the sheet appears, we pre-warm BOTH the provider
    and the AppKit modal as soon as the page loads on mobile, so the first tap on
@@ -36,8 +39,8 @@
   var UP_CDN  = 'https://esm.sh/@walletconnect/universal-provider@2.17.2';
   var APPKIT_CDN = 'https://esm.sh/@reown/appkit@1/core';
   var APPKIT_NET_CDN = 'https://esm.sh/@reown/appkit@1/networks';
-  // Freighter's public WalletConnect Explorer (WalletGuide) id -- used to put
-  // Freighter in the modal's featured row (docs: "Featuring Freighter").
+  // Freighter's public WalletConnect Explorer (WalletGuide) id -- used to lock
+  // the modal to Freighter only (docs: "Featuring Freighter").
   var FREIGHTER_WALLET_ID = '997a355c8f682468706a76cff1b004a7115f505fb962dac54b6e9b442dd1c380';
   var FREIGHTER_SCHEME = 'freighterwallet';
 
@@ -122,10 +125,13 @@
     return initing;
   }
 
-  // Step 2: lazily load Reown AppKit and create the modal, exactly as the
-  // Freighter docs prescribe. Stellar is not a built-in AppKit network, so we
-  // pass a placeholder network; manualWCControl:true means the modal never uses
-  // it for chain switching. featuredWalletIds puts Freighter in the featured row.
+  // Step 2: lazily load Reown AppKit and create the modal locked to Freighter.
+  // Stellar is not a built-in AppKit network, so we pass a placeholder network;
+  // manualWCControl:true means the modal never uses it for chain switching.
+  //   includeWalletIds   -> only Freighter is offered
+  //   allWallets:'HIDE'  -> no "All Wallets" button
+  //   featuredWalletIds  -> Freighter pinned in the featured row (must accompany
+  //                         includeWalletIds, per reown-com/appkit#3128)
   function loadModal(p) {
     if (modal) return Promise.resolve(modal);
     if (modaling) return modaling;
@@ -139,6 +145,8 @@
         networks: [mainnet],
         universalProvider: p,
         manualWCControl: true,
+        allWallets: 'HIDE',
+        includeWalletIds: [FREIGHTER_WALLET_ID],
         featuredWalletIds: [FREIGHTER_WALLET_ID]
       });
       return modal;
@@ -244,8 +252,8 @@
         if (address) return address;
         return loadModal(p).then(function () {
           // Official flow: open the modal first, then start pairing. The modal
-          // shows Freighter in the featured row; tapping it deep-links into the
-          // Freighter app (or shows a QR in an external browser).
+          // is locked to Freighter; tapping it deep-links into the Freighter app
+          // (or shows a QR in an external browser).
           try { if (modal) modal.open(); } catch (_) {}
           return pairLoop(p, 2);
         });
