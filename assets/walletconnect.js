@@ -3,7 +3,7 @@
 
    Implemented per the OFFICIAL Freighter docs (https://docs.freighter.app,
    section "Mobile / WalletConnect"):
-     1. provider = UniversalProvider.init({ projectId, metadata })
+     1. provider = UniversalProvider.init({ projectId, relayUrl, metadata })
      2. modal    = createAppKit({ projectId, networks:[mainnet],
                      universalProvider: provider, manualWCControl: true,
                      includeWalletIds:[FREIGHTER], featuredWalletIds:[FREIGHTER],
@@ -19,6 +19,13 @@
    tappable Freighter button that DEEP-LINKS straight into the Freighter app
    (in an external browser it shows a QR to scan with the phone).
 
+   RELAY: a real-phone diagnostic showed connect() failing with the WalletConnect
+   relay error "Subscribing to <topic> failed, please try again". Per Reown docs
+   that is a retryable relay-connectivity issue, and the current relay host is
+   wss://relay.walletconnect.org (the .com host is deprecated/blocked on some
+   networks). We therefore pin relayUrl explicitly and retry the pairing on
+   transient subscribe/relay/timeout failures with a short backoff.
+
    To avoid the ~5s delay before the sheet appears, we pre-warm BOTH the provider
    and the AppKit modal as soon as the page loads on mobile, so the first tap on
    Connect opens the modal instantly.
@@ -30,6 +37,10 @@
   'use strict';
 
   var PROJECT_ID = '8270edd9a0e826b51a7729bac80a21ff';
+  // Current WalletConnect relay endpoint. The legacy relay.walletconnect.COM
+  // host is deprecated and blocked on some networks, which surfaces as
+  // "Subscribing to <topic> failed". Pin the .ORG host explicitly.
+  var RELAY_URL = 'wss://relay.walletconnect.org';
   var CHAIN_TESTNET = 'stellar:testnet';
   var CHAIN_PUBNET  = 'stellar:pubnet';
   var CHAIN = CHAIN_TESTNET;                 // this dapp signs/submits on Testnet
@@ -102,13 +113,14 @@
     try { var b = document.getElementById('wm-backdrop'); if (b) b.style.display = 'none'; } catch (_) {}
   }
 
-  // Step 1: lazily load + init the WalletConnect UniversalProvider.
+  // Step 1: lazily load + init the WalletConnect UniversalProvider, pinned to the
+  // current .org relay host.
   function ensure() {
     if (provider) return Promise.resolve(provider);
     if (initing) return initing;
     initing = import(UP_CDN).then(function (mod) {
       var UP = mod.UniversalProvider || (mod.default && mod.default.UniversalProvider) || mod.default;
-      return UP.init({ projectId: PROJECT_ID, metadata: meta() });
+      return UP.init({ projectId: PROJECT_ID, relayUrl: RELAY_URL, metadata: meta() });
     }).then(function (p) {
       provider = p;
       // AppKit (loaded via universalProvider) listens for display_uri itself and
@@ -160,10 +172,19 @@
     try { m = ((err && (err.message || err.reason || err.code)) || err || '') + ''; } catch (_) {}
     return /reject|declin|cancel|denied|disapprov|\buser\b/i.test(m);
   }
+  // The relay sometimes fails the first subscribe(s) with a retryable error
+  // ("Subscribing to <topic> failed, please try again", timeouts, socket drops).
+  // Treat these as transient and re-pair instead of surfacing a hard failure.
+  function isRetryable(err) {
+    var m = '';
+    try { m = ((err && (err.message || err.reason)) || err || '') + ''; } catch (_) {}
+    return /subscrib|please try again|timeout|timed out|relay|socket|websocket|publish|stale|network/i.test(m);
+  }
 
   // Step 3+4: pair and await the session. We request BOTH Stellar networks so
   // Freighter can approve on whichever it is on, then warn if it is not Testnet.
-  // One silent retry on a transient (non-user-reject) first-tap failure.
+  // Retry transient (non-user-reject) relay/subscribe failures with a short
+  // backoff before giving up.
   function pairLoop(p, tries) {
     return p.connect({
       namespaces: {
@@ -175,8 +196,10 @@
       if (connectedChain && connectedChain !== CHAIN_TESTNET) { warnWrongNetwork(); }
       return address;
     }, function (err) {
-      if (tries > 1 && !isUserReject(err)) {
-        return new Promise(function (r) { setTimeout(r, 900); }).then(function () { return pairLoop(p, tries - 1); });
+      if (tries > 1 && !isUserReject(err) && isRetryable(err)) {
+        // back off a bit longer each attempt to let the relay settle
+        var delay = 700 + (4 - tries) * 600;
+        return new Promise(function (r) { setTimeout(r, delay); }).then(function () { return pairLoop(p, tries - 1); });
       }
       try { if (modal) modal.close(); } catch (_) {}
       throw err;
@@ -255,7 +278,7 @@
           // is locked to Freighter; tapping it deep-links into the Freighter app
           // (or shows a QR in an external browser).
           try { if (modal) modal.open(); } catch (_) {}
-          return pairLoop(p, 2);
+          return pairLoop(p, 4);
         });
       });
     },
