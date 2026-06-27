@@ -14,9 +14,9 @@
 (function(){
   var SHA = "ab81187f6045f4affeddfce54b3507a713cb8c55";
   var urls = [
-    "https://cdn.jsdelivr.net/gh/aar0n4ik/shieldplay@" + SHA + "/assets/send.js",
-    "https://cdn.statically.io/gh/aar0n4ik/shieldplay/" + SHA + "/assets/send.js",
-    "https://rawcdn.githack.com/aar0n4ik/shieldplay/" + SHA + "/assets/send.js"
+    "https://cdn.jsdelivr.net/gh/aar0n4ik/zerolyn@" + SHA + "/assets/send.js",
+    "https://cdn.statically.io/gh/aar0n4ik/zerolyn/" + SHA + "/assets/send.js",
+    "https://rawcdn.githack.com/aar0n4ik/zerolyn/" + SHA + "/assets/send.js"
   ];
   function patch(code){
     var A = "connect:async function(){";

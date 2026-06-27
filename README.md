@@ -154,8 +154,8 @@ scripts/              setup.sh, deploy.sh, vk_to_args.js, proof_to_args.js
 docs/ARCHITECTURE.md  Architecture notes
 ```
 
-> **Naming:** the product and on-chain brand is **Zerolyn**. The Git repository is named `shieldplay`
-> and the compiled Soroban wasm crates/artifacts are still named `shieldpay_*` (see `scripts/deploy.sh`).
+> **Naming:** the product and on-chain brand is **Zerolyn**. The Git repository is named `zerolyn`
+> and the compiled Soroban wasm crates/artifacts are still named `zerolyn_*` (see `scripts/deploy.sh`).
 > These are legacy build names for the *same* contracts; the crate rename is purely cosmetic and is deferred
 > to avoid churning the already-deployed-and-verified build. When you rename, update the crate `name` in each
 > `contracts/*/Cargo.toml`, the wasm paths in `scripts/deploy.sh`, and any `contractimport!` macro path.
