@@ -240,12 +240,6 @@ ul.tight li{margin:4px 0;color:var(--ink-soft);font-size:14.5px}
   .about .ava{max-width:220px;margin:0 auto;font-size:64px}
 }
 
-/* Long-label languages (ES/RU/UK nav labels are far too long for a horizontal bar) collapse to the menu button at every width */
-html[lang="es"] .nav-links,html[lang="ru"] .nav-links,html[lang="uk"] .nav-links{display:none}
-html[lang="es"] .nav-toggle,html[lang="ru"] .nav-toggle,html[lang="uk"] .nav-toggle{display:inline-flex}
-html[lang="es"] .nav-links.open,html[lang="ru"] .nav-links.open,html[lang="uk"] .nav-links.open{display:flex;position:absolute;top:70px;left:0;right:0;background:#fff;flex-direction:column;padding:12px;border-bottom:1px solid var(--line);box-shadow:var(--shadow)}
-html[lang="es"] .nav-links.open a,html[lang="ru"] .nav-links.open a,html[lang="uk"] .nav-links.open a{width:100%}
-
 /* ---- spacing / polish ---- */
 .section .eyebrow{margin-bottom:16px}
 .section h2,.section .h-lg{margin-bottom:16px}
