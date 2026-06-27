@@ -232,11 +232,58 @@
     } catch (_) {}
     return FREIGHTER_SCHEME + '://';
   }
-  function focusWalletForRequest() {
-    if (!isMobile()) return;
-    // Defer so provider.request() actually publishes to the relay before we
-    // navigate away (otherwise the wallet opens with nothing pending).
-    setTimeout(function () { try { window.location.href = walletRedirect(); } catch (_) {} }, 150);
+  // Localized copy for the "go approve in Freighter" prompt shown during signing.
+  function signPromptLabels() {
+    var l = siteLang();
+    var T = {
+      en: { t: 'Confirm in Freighter', b: 'Sign request sent. Open Freighter, approve the payment, then come back here.', o: 'Open Freighter' },
+      ru: { t: '\u041f\u043e\u0434\u0442\u0432\u0435\u0440\u0434\u0438\u0442\u0435 \u0432 Freighter', b: '\u0417\u0430\u043f\u0440\u043e\u0441 \u043d\u0430 \u043f\u043e\u0434\u043f\u0438\u0441\u044c \u043e\u0442\u043f\u0440\u0430\u0432\u043b\u0435\u043d. \u041e\u0442\u043a\u0440\u043e\u0439\u0442\u0435 Freighter, \u043f\u043e\u0434\u0442\u0432\u0435\u0440\u0434\u0438\u0442\u0435 \u043e\u043f\u043b\u0430\u0442\u0443 \u0438 \u0432\u0435\u0440\u043d\u0438\u0442\u0435\u0441\u044c \u0441\u044e\u0434\u0430.', o: '\u041e\u0442\u043a\u0440\u044b\u0442\u044c Freighter' },
+      uk: { t: '\u041f\u0456\u0434\u0442\u0432\u0435\u0440\u0434\u0456\u0442\u044c \u0443 Freighter', b: '\u0417\u0430\u043f\u0438\u0442 \u043d\u0430 \u043f\u0456\u0434\u043f\u0438\u0441 \u043d\u0430\u0434\u0456\u0441\u043b\u0430\u043d\u043e. \u0412\u0456\u0434\u043a\u0440\u0438\u0439\u0442\u0435 Freighter, \u043f\u0456\u0434\u0442\u0432\u0435\u0440\u0434\u0456\u0442\u044c \u043e\u043f\u043b\u0430\u0442\u0443 \u0456 \u043f\u043e\u0432\u0435\u0440\u043d\u0456\u0442\u044c\u0441\u044f \u0441\u044e\u0434\u0438.', o: '\u0412\u0456\u0434\u043a\u0440\u0438\u0442\u0438 Freighter' },
+      es: { t: 'Confirma en Freighter', b: 'Solicitud de firma enviada. Abre Freighter, aprueba el pago y vuelve aqu\u00ed.', o: 'Abrir Freighter' },
+      de: { t: 'In Freighter best\u00e4tigen', b: 'Signaturanfrage gesendet. \u00d6ffne Freighter, best\u00e4tige die Zahlung und komm dann hierher zur\u00fcck.', o: 'Freighter \u00f6ffnen' }
+    };
+    return T[l] || T.en;
+  }
+  function hideSignPrompt() {
+    var b = document.getElementById('wc-sign-backdrop');
+    if (b && b.parentNode) b.parentNode.removeChild(b);
+  }
+  // Shown right after a sign request is published. Gives the user a reliable,
+  // user-gesture button to jump into Freighter (a manual tap never gets frozen
+  // mid-publish or intercepted by the browser the way an instant auto-redirect
+  // does). Auto-dismisses when the request settles.
+  function showSignPrompt() {
+    hideSignPrompt();
+    var L = signPromptLabels();
+    var link = walletRedirect();
+    if (!document.getElementById('wc-sign-style')) {
+      var st = document.createElement('style'); st.id = 'wc-sign-style';
+      st.textContent = '@keyframes wcspin{to{transform:rotate(360deg)}}';
+      document.head.appendChild(st);
+    }
+    var bd = document.createElement('div');
+    bd.id = 'wc-sign-backdrop';
+    bd.style.cssText = 'position:fixed;inset:0;z-index:100001;display:flex;align-items:center;justify-content:center;padding:20px;background:rgba(16,24,40,.45);-webkit-backdrop-filter:blur(6px);backdrop-filter:blur(6px);font-family:inherit';
+    var card = document.createElement('div');
+    card.style.cssText = 'width:100%;max-width:360px;background:#fff;border-radius:20px;padding:26px 22px;text-align:center;box-shadow:0 30px 80px -20px rgba(16,24,40,.5)';
+    card.innerHTML = '<div style="width:46px;height:46px;margin:0 auto 14px;border-radius:50%;border:3px solid rgba(29,78,216,.18);border-top-color:#1d4ed8;animation:wcspin .8s linear infinite"></div>' +
+      '<h3 style="margin:0 0 8px;font-size:18px;color:#1a1d23;font-weight:700">' + L.t + '</h3>' +
+      '<div style="margin:0 0 16px;font-size:14px;line-height:1.5;color:#4a5160">' + L.b + '</div>' +
+      '<a id="wc-sign-open" href="' + link + '" style="display:flex;align-items:center;justify-content:center;width:100%;padding:12px 16px;border-radius:12px;background:linear-gradient(160deg,#2f7bff,#1d4ed8);color:#fff;font-size:15px;font-weight:600;text-decoration:none;box-sizing:border-box">' + L.o + '</a>';
+    bd.appendChild(card); document.body.appendChild(bd);
+  }
+  // Fire a WC request and, on mobile, surface the approve-in-Freighter prompt.
+  // Crucially we call p.request() FIRST (which begins publishing to the relay)
+  // and only auto-open the wallet after a short delay, so the request is on the
+  // wire before the browser tab is backgrounded. The visible button is the
+  // reliable fallback if the auto-open is blocked.
+  function requestWithPrompt(p, method, xdr) {
+    var req = p.request({ chainId: CHAIN, request: { method: method, params: { xdr: xdr } } }, CHAIN);
+    if (isMobile()) {
+      showSignPrompt();
+      setTimeout(function () { try { window.location.href = walletRedirect(); } catch (_) {} }, 700);
+    }
+    return req.then(function (res) { hideSignPrompt(); return res; }, function (e) { hideSignPrompt(); throw e; });
   }
 
   window.SPWC = {
@@ -289,17 +336,13 @@
 
     signXDR: function (xdr) {
       return ensure().then(function (p) {
-        var req = p.request({ chainId: CHAIN, request: { method: 'stellar_signXDR', params: { xdr: xdr } } }, CHAIN);
-        focusWalletForRequest();
-        return req;
+        return requestWithPrompt(p, 'stellar_signXDR', xdr);
       }).then(function (res) { return (res && (res.signedXDR || res.signedXdr)) || res || xdr; });
     },
 
     signAndSubmitXDR: function (xdr) {
       return ensure().then(function (p) {
-        var req = p.request({ chainId: CHAIN, request: { method: 'stellar_signAndSubmitXDR', params: { xdr: xdr } } }, CHAIN);
-        focusWalletForRequest();
-        return req;
+        return requestWithPrompt(p, 'stellar_signAndSubmitXDR', xdr);
       });
     },
 
