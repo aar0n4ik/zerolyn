@@ -7,8 +7,9 @@
 
    Honesty note: `amount` and `balance` are private witnesses. We use the real
    displayed balance when it is known and REFUSE amounts above it (a genuine
-   solvency proof would fail), instead of fabricating balance = amount. Binding
-   the proof to the actual on-chain payment is the roadmap item in docs. */
+   solvency proof would fail), instead of fabricating balance = amount. This
+   build also binds the proof to the on-chain payment via the public `paid`
+   input (paid === amount enforced inside the circuit). */
 (function(){
 'use strict';
 var CFG=window.SP_CONFIG||{};
@@ -77,7 +78,7 @@ async function run(){
   line('mut',t('zk_stmt').replace('{l}',String(LIMIT_UNITS)));
   b.textContent=t('zk_busy');
   try{
-    var r=await window.snarkjs.groth16.fullProve({amount:amount.toString(),balance:balance.toString(),limit:limit.toString()},'assets/zk/transfer.wasm','assets/zk/transfer_final.zkey');
+    var r=await window.snarkjs.groth16.fullProve({amount:amount.toString(),balance:balance.toString(),limit:limit.toString(),paid:amount.toString()},'assets/zk/transfer.wasm','assets/zk/transfer_final.zkey');
     line('ok','\u2713 '+t('zk_proofok'));
     b.textContent=t('zk_busy2');
     var a=g1hex(r.proof.pi_a), bb=g2hex(r.proof.pi_b), c=g1hex(r.proof.pi_c);

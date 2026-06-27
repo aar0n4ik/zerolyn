@@ -114,8 +114,9 @@ async function genProof(){
     var limit=100000;
     var amount=Math.floor(Math.random()*90000)+1000;
     var balance=amount+Math.floor(Math.random()*50000)+1;
+    var paid=amount;   // bound: proven amount == on-chain payment
     var t0=now();
-    var r=await window.snarkjs.groth16.fullProve({amount:String(amount),balance:String(balance),limit:String(limit)},'assets/zk/transfer.wasm','assets/zk/transfer_final.zkey');
+    var r=await window.snarkjs.groth16.fullProve({amount:String(amount),balance:String(balance),limit:String(limit),paid:String(paid)},'assets/zk/transfer.wasm','assets/zk/transfer_final.zkey');
     lastGenMs=Math.round(now()-t0);
     $('proof').value=JSON.stringify({proof:r.proof,publicSignals:r.publicSignals},null,2);
     clear(); line('ok','\u2713 '+t('ver_local_ok'));
