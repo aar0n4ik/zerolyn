@@ -47,10 +47,10 @@ p{margin:0}
 
 /* Header */
 header.nav{position:sticky;top:0;z-index:50;background:rgba(255,255,255,.86);backdrop-filter:saturate(160%) blur(14px);border-bottom:1px solid var(--line)}
-.nav-in{display:flex;flex-wrap:nowrap;align-items:center;gap:10px;height:70px;max-width:1240px}
+.nav-in{display:flex;flex-wrap:nowrap;align-items:center;gap:10px;height:70px}
 .brand{display:flex;align-items:center;gap:10px;font-weight:800;font-size:19px}
 .brand .logo{width:34px;height:34px}
-.nav-links{display:flex;align-items:center;gap:1px;margin-left:2px;min-width:0}
+.nav-links{display:flex;align-items:center;gap:1px;margin-left:auto;min-width:0}
 .nav-links a{padding:7px 9px;border-radius:10px;font-weight:600;font-size:13px;white-space:nowrap;color:var(--ink-soft);transition:.15s}
 .nav-links a:hover{background:var(--bg-tint);color:var(--violet-600)}
 .nav-links a.active{color:var(--violet-600);background:var(--bg-tint)}
@@ -239,6 +239,12 @@ ul.tight li{margin:4px 0;color:var(--ink-soft);font-size:14.5px}
   .soc{width:46px;height:46px}.soc svg{width:30px;height:30px}
   .about .ava{max-width:220px;margin:0 auto;font-size:64px}
 }
+
+/* Long-label languages (ES/RU/UK nav labels are far too long for a horizontal bar) collapse to the menu button at every width */
+html[lang="es"] .nav-links,html[lang="ru"] .nav-links,html[lang="uk"] .nav-links{display:none}
+html[lang="es"] .nav-toggle,html[lang="ru"] .nav-toggle,html[lang="uk"] .nav-toggle{display:inline-flex}
+html[lang="es"] .nav-links.open,html[lang="ru"] .nav-links.open,html[lang="uk"] .nav-links.open{display:flex;position:absolute;top:70px;left:0;right:0;background:#fff;flex-direction:column;padding:12px;border-bottom:1px solid var(--line);box-shadow:var(--shadow)}
+html[lang="es"] .nav-links.open a,html[lang="ru"] .nav-links.open a,html[lang="uk"] .nav-links.open a{width:100%}
 
 /* ---- spacing / polish ---- */
 .section .eyebrow{margin-bottom:16px}
