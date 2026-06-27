@@ -1,29 +1,48 @@
 /* Zerolyn - assets/walletconnect.js
-   Defines window.SPWC: Freighter Mobile connection via WalletConnect v2 / Reown.
-   Mobile pairing uses the NATIVE sheet (rendered by send.js) plus the direct
-   Freighter deep link (freighterwallet://wc?uri=...) and a QR for cross-device.
-   The Reown AppKit modal is intentionally NOT used: its generic, EVM-oriented
-   modal did not reliably deep-link Freighter Mobile for Stellar (tapping the
-   wallet did nothing), and loading its bundle delayed the sheet by several
-   seconds. The native deep-link path is instant and reliable.
+   window.SPWC: connect Freighter Mobile from a phone via WalletConnect v2 / Reown.
 
-   send.js gate: WC() uses this object when window.SPWC.ready() is truthy, then
-   Wallet.connect() drives it and feeds the pairing URI to setWCUri().
+   Implemented per the OFFICIAL Freighter docs (https://docs.freighter.app,
+   section "Mobile / WalletConnect"):
+     1. provider = UniversalProvider.init({ projectId, metadata })
+     2. modal    = createAppKit({ projectId, networks:[mainnet],
+                     universalProvider: provider, manualWCControl: true,
+                     featuredWalletIds: [FREIGHTER] })
+     3. modal.open()
+     4. session  = await provider.connect({ namespaces: { stellar: {...} } })
+     5. modal.close()
+
+   The Reown/AppKit modal is the interactive UI that lists Freighter in the
+   featured row and DEEP-LINKS into the Freighter app when tapped (in Freighter's
+   in-app browser) or shows a QR (external browser). This is what makes the
+   connection actually complete on mobile.
+
+   To avoid the ~5s delay before the sheet appears, we pre-warm BOTH the provider
+   and the AppKit modal as soon as the page loads on mobile, so the first tap on
+   Connect opens the modal instantly.
+
+   Desktop is gated out in send.js (it uses the Freighter extension), so nothing
+   here affects desktop behavior. This dapp runs on Stellar TESTNET.
 */
 (function () {
   'use strict';
 
   var PROJECT_ID = '8270edd9a0e826b51a7729bac80a21ff';
-  var NETWORK = 'testnet';                 // 'testnet' | 'pubnet'
-  var CHAIN   = 'stellar:' + NETWORK;      // CAIP-2 chain id (this app: testnet)
   var CHAIN_TESTNET = 'stellar:testnet';
   var CHAIN_PUBNET  = 'stellar:pubnet';
+  var CHAIN = CHAIN_TESTNET;                 // this dapp signs/submits on Testnet
+  // Only the methods this dapp actually calls. Freighter Mobile supports all
+  // four; requesting the minimal set keeps the approval prompt simple.
   var METHODS = ['stellar_signXDR', 'stellar_signAndSubmitXDR'];
   var UP_CDN  = 'https://esm.sh/@walletconnect/universal-provider@2.17.2';
-  // Freighter's PUBLIC WalletConnect Explorer (WalletGuide) id (kept for reference).
+  var APPKIT_CDN = 'https://esm.sh/@reown/appkit@1/core';
+  var APPKIT_NET_CDN = 'https://esm.sh/@reown/appkit@1/networks';
+  // Freighter's public WalletConnect Explorer (WalletGuide) id -- used to put
+  // Freighter in the modal's featured row (docs: "Featuring Freighter").
   var FREIGHTER_WALLET_ID = '997a355c8f682468706a76cff1b004a7115f505fb962dac54b6e9b442dd1c380';
+  var FREIGHTER_SCHEME = 'freighterwallet';
 
-  var provider = null, modal = null, session = null, address = null, initing = null, uriCb = null, connectedChain = null;
+  var provider = null, modal = null, session = null, address = null;
+  var initing = null, modaling = null, uriCb = null, connectedChain = null;
 
   function meta() {
     var o = location.origin;
@@ -35,9 +54,7 @@
     };
   }
   function isMobile() { return /Android|iPhone|iPad|iPod|Mobile/i.test(navigator.userAgent || ''); }
-  // Use the language the user actually selected on the site (app.js stores it in
-  // localStorage as 'sp_lang' and mirrors it on <html lang>), NOT navigator.language
-  // -- otherwise a Russian browser shows Russian text while the site is in English.
+  // Use the language the user selected on the site (app.js stores 'sp_lang').
   function siteLang() {
     var l = '';
     try { l = localStorage.getItem('sp_lang') || ''; } catch (_) {}
@@ -45,52 +62,12 @@
     if (!l) { l = navigator.language || 'en'; }
     return l.slice(0, 2).toLowerCase();
   }
-  // Production Freighter Mobile registers the custom scheme "freighterwallet".
-  var FREIGHTER_SCHEME = 'freighterwallet';
   function freighterLink(uri) { return FREIGHTER_SCHEME + '://wc?uri=' + encodeURIComponent(uri); }
 
-  function copyLabel() {
-    var l = siteLang();
-    var m = {
-      en: 'Copy link (paste it in Freighter)',
-      ru: '\u0421\u043a\u043e\u043f\u0438\u0440\u043e\u0432\u0430\u0442\u044c \u0441\u0441\u044b\u043b\u043a\u0443 (\u0432\u0441\u0442\u0430\u0432\u044c\u0442\u0435 \u0432 Freighter)',
-      uk: '\u0421\u043a\u043e\u043f\u0456\u044e\u0432\u0430\u0442\u0438 \u043f\u043e\u0441\u0438\u043b\u0430\u043d\u043d\u044f (\u0432\u0441\u0442\u0430\u0432\u0442\u0435 \u0443 Freighter)',
-      es: 'Copiar enlace (p\u00e9galo en Freighter)',
-      de: 'Link kopieren (in Freighter einf\u00fcgen)'
-    };
-    return m[l] || m.en;
-  }
-  function injectCopyButton(uri) {
-    try {
-      var qr = document.getElementById('wm-qr');
-      var card = (qr && qr.parentNode) || document.querySelector('.wm-card');
-      if (!card || document.getElementById('wm-copy')) return;
-      var b = document.createElement('button');
-      b.id = 'wm-copy';
-      b.type = 'button';
-      b.className = 'wm-cta';
-      b.style.marginTop = '10px';
-      b.textContent = copyLabel();
-      b.onclick = function () {
-        function done() { b.textContent = '\u2713 ' + copyLabel(); }
-        try {
-          if (navigator.clipboard && navigator.clipboard.writeText) {
-            navigator.clipboard.writeText(uri).then(done, function () {});
-          } else {
-            var ta = document.createElement('textarea');
-            ta.value = uri; document.body.appendChild(ta); ta.focus(); ta.select();
-            try { document.execCommand('copy'); } catch (_) {}
-            document.body.removeChild(ta); done();
-          }
-        } catch (_) {}
-      };
-      card.appendChild(b);
-    } catch (_) {}
-  }
+  // Accounts come back as "stellar:testnet:G..." -- split on ':' for the key.
   function addrOf(sess) {
-    try { return sess.namespaces.stellar.accounts[0].split(':').pop(); } catch (_) { return null; }
+    try { return sess.namespaces.stellar.accounts[0].split(':')[2]; } catch (_) { return null; }
   }
-  // Which Stellar network the wallet actually approved (e.g. 'stellar:testnet').
   function chainOf(sess) {
     try { var a = sess.namespaces.stellar.accounts[0].split(':'); return a[0] + ':' + a[1]; } catch (_) { return null; }
   }
@@ -105,7 +82,6 @@
     };
     return m[l] || m.en;
   }
-  // Self-contained floating toast (the page modal closes right after connect).
   function warnWrongNetwork() {
     try {
       var d = document.createElement('div');
@@ -116,23 +92,14 @@
     } catch (_) {}
   }
 
-  // Show/hide send.js's own pairing modal (the native sheet we rely on).
+  // send.js shows its own "connecting" sheet (#wm-backdrop) right before calling
+  // SPWC.connect(). Hide it so it does not sit on top of / fight with the AppKit
+  // modal, which is the real interactive UI that deep-links into Freighter.
   function hideNativeModal() {
     try { var b = document.getElementById('wm-backdrop'); if (b) b.style.display = 'none'; } catch (_) {}
   }
-  function showNativeModal() {
-    try { var b = document.getElementById('wm-backdrop'); if (b) b.style.display = ''; } catch (_) {}
-  }
 
-  // AppKit is intentionally disabled. Keep modal = null so every branch takes the
-  // native pairing sheet + direct Freighter deep-link path. (Kept as a no-op so
-  // the rest of the flow can stay structurally unchanged.)
-  function loadModal(p) {
-    modal = null;
-    return Promise.resolve(null);
-  }
-
-  // Lazily load and initialize the WalletConnect UniversalProvider.
+  // Step 1: lazily load + init the WalletConnect UniversalProvider.
   function ensure() {
     if (provider) return Promise.resolve(provider);
     if (initing) return initing;
@@ -141,66 +108,74 @@
       return UP.init({ projectId: PROJECT_ID, metadata: meta() });
     }).then(function (p) {
       provider = p;
-      // The relay emits the pairing URI here. Feed it to send.js (uriCb) so the
-      // native sheet wires its "Open in Freighter" button + QR, then actively
-      // open Freighter with the pairing URI so the user does not have to hunt
-      // for the button (the old AppKit sheet just sat there doing nothing).
+      // AppKit (loaded via universalProvider) listens for display_uri itself and
+      // renders the QR / wallet list. We also forward the uri to send.js's
+      // optional callback as a harmless backup.
       p.on('display_uri', function (uri) {
         if (typeof uriCb === 'function') { try { uriCb(uri); } catch (_) {} }
-        var dl = freighterLink(uri);
-        try {
-          var openBtn = document.getElementById('wm-open');
-          if (openBtn) openBtn.onclick = function () { try { window.location.href = dl; } catch (_) {} };
-        } catch (_) {}
-        injectCopyButton(uri);
-        // Auto-open Freighter on the phone as soon as the pairing URI exists. The
-        // visible button + QR stay as reliable fallbacks if the OS blocks it.
-        if (isMobile()) { setTimeout(function () { try { window.location.href = dl; } catch (_) {} }, 350); }
       });
+      p.on('session_delete', function () { address = null; session = null; connectedChain = null; });
       if (p.session) { session = p.session; address = addrOf(session); connectedChain = chainOf(session); }
       return p;
     });
-    // If init fails (transient CDN/relay hiccup), clear the cached promise so the
-    // NEXT tap retries from scratch instead of reusing a dead, already-rejected
-    // promise -- that reuse is what produced "couldn't connect" on the first taps.
     initing.catch(function () { initing = null; });
     return initing;
   }
 
-  // Pairing params: request BOTH Stellar networks as OPTIONAL namespaces.
-  function pairParams() {
-    return { optionalNamespaces: { stellar: { chains: [CHAIN_PUBNET, CHAIN_TESTNET], methods: METHODS, events: [] } } };
+  // Step 2: lazily load Reown AppKit and create the modal, exactly as the
+  // Freighter docs prescribe. Stellar is not a built-in AppKit network, so we
+  // pass a placeholder network; manualWCControl:true means the modal never uses
+  // it for chain switching. featuredWalletIds puts Freighter in the featured row.
+  function loadModal(p) {
+    if (modal) return Promise.resolve(modal);
+    if (modaling) return modaling;
+    modaling = Promise.all([import(APPKIT_CDN), import(APPKIT_NET_CDN)]).then(function (mods) {
+      var core = mods[0] || {};
+      var nets = mods[1] || {};
+      var createAppKit = core.createAppKit || (core.default && core.default.createAppKit) || core.default;
+      var mainnet = nets.mainnet || (nets.default && nets.default.mainnet) || nets.default;
+      modal = createAppKit({
+        projectId: PROJECT_ID,
+        networks: [mainnet],
+        universalProvider: p,
+        manualWCControl: true,
+        featuredWalletIds: [FREIGHTER_WALLET_ID]
+      });
+      return modal;
+    });
+    modaling.catch(function () { modaling = null; });
+    return modaling;
   }
-  // A failure is "transient" (worth one silent retry) UNLESS the user explicitly
-  // rejected/cancelled the request in the wallet.
+
   function isUserReject(err) {
     var m = '';
     try { m = ((err && (err.message || err.reason || err.code)) || err || '') + ''; } catch (_) {}
     return /reject|declin|cancel|denied|disapprov|\buser\b/i.test(m);
   }
-  // Start pairing and await the session. On a transient first-tap failure, wait
-  // briefly and retry once instead of bubbling a false "couldn't connect".
+
+  // Step 3+4: pair and await the session. We request BOTH Stellar networks so
+  // Freighter can approve on whichever it is on, then warn if it is not Testnet.
+  // One silent retry on a transient (non-user-reject) first-tap failure.
   function pairLoop(p, tries) {
-    return p.connect(pairParams()).then(function (sess) {
+    return p.connect({
+      namespaces: {
+        stellar: { methods: METHODS, chains: [CHAIN_TESTNET, CHAIN_PUBNET], events: ['accountsChanged'] }
+      }
+    }).then(function (sess) {
+      try { if (modal) modal.close(); } catch (_) {}
       session = sess; address = addrOf(sess); connectedChain = chainOf(sess);
       if (connectedChain && connectedChain !== CHAIN_TESTNET) { warnWrongNetwork(); }
       return address;
     }, function (err) {
       if (tries > 1 && !isUserReject(err)) {
-        return new Promise(function (r) { setTimeout(r, 900); }).then(function () {
-          showNativeModal();
-          return pairLoop(p, tries - 1);
-        });
+        return new Promise(function (r) { setTimeout(r, 900); }).then(function () { return pairLoop(p, tries - 1); });
       }
-      showNativeModal();
+      try { if (modal) modal.close(); } catch (_) {}
       throw err;
     });
   }
-  // After a sign request is published to the relay, a mobile user is still in the
-  // browser -- nothing surfaces the prompt, so step 3 hangs forever. Deep-link
-  // into the wallet so Freighter comes to the foreground and shows the pending
-  // request. Prefer the wallet's own redirect from the session metadata, else
-  // Freighter's registered scheme.
+
+  // ---- Signing: bring Freighter to the foreground on mobile ----
   function walletRedirect() {
     try {
       var r = session && session.peer && session.peer.metadata && session.peer.metadata.redirect;
@@ -208,7 +183,6 @@
     } catch (_) {}
     return FREIGHTER_SCHEME + '://';
   }
-  // Localized copy for the "go approve in Freighter" prompt shown during signing.
   function signPromptLabels() {
     var l = siteLang();
     var T = {
@@ -224,10 +198,6 @@
     var b = document.getElementById('wc-sign-backdrop');
     if (b && b.parentNode) b.parentNode.removeChild(b);
   }
-  // Shown right after a sign request is published. Gives the user a reliable,
-  // user-gesture button to jump into Freighter (a manual tap never gets frozen
-  // mid-publish or intercepted by the browser the way an instant auto-redirect
-  // does). Auto-dismisses when the request settles.
   function showSignPrompt() {
     hideSignPrompt();
     var L = signPromptLabels();
@@ -248,16 +218,8 @@
       '<a id="wc-sign-open" href="' + link + '" style="display:flex;align-items:center;justify-content:center;width:100%;padding:12px 16px;border-radius:12px;background:linear-gradient(160deg,#2f7bff,#1d4ed8);color:#fff;font-size:15px;font-weight:600;text-decoration:none;box-sizing:border-box">' + L.o + '</a>';
     bd.appendChild(card); document.body.appendChild(bd);
   }
-  // Fire a WC request and, on mobile, surface the approve-in-Freighter prompt.
-  // Crucially we call p.request() FIRST (which begins publishing to the relay)
-  // and only auto-open the wallet after a short delay, so the request is on the
-  // wire before the browser tab is backgrounded. The visible button is the
-  // reliable fallback if the auto-open is blocked.
+  // provider.request signature is request({ method, params }, chainId) per docs.
   function requestWithPrompt(p, method, xdr) {
-    // UniversalProvider.request signature is request({ method, params }, chain)
-    // -- NOT the SignClient { topic, chainId, request } shape. Passing the wrong
-    // shape sent method/params as undefined, so Freighter got an empty request
-    // it ignored (the app just opened with nothing to approve).
     var req = p.request({ method: method, params: { xdr: xdr } }, CHAIN);
     if (isMobile()) {
       showSignPrompt();
@@ -267,35 +229,26 @@
   }
 
   window.SPWC = {
-    // Always use WalletConnect on mobile, INCLUDING inside Freighter's Discover
-    // browser (Discover only injects a detection marker, not a signing API, so
-    // the WC pairing is the only path that connects). Desktop is gated by `mob`
-    // in send.js, so this does not change desktop behavior.
+    // Always use WalletConnect on mobile (desktop is gated out in send.js).
     ready: function () { return true; },
     getPublicKey: function () { return address; },
     network: function () { return connectedChain; },
-
     deepLink: function (uri) { return freighterLink(uri); },
 
-    // onUri (optional): send.js passes setWCUri. Returns the connected G... address.
+    // onUri (optional): send.js passes setWCUri. Returns the connected G... key.
     connect: function (onUri) {
       uriCb = onUri || null;
-      // Keep send.js's native pairing sheet visible the whole time (it is shown
-      // the instant the user taps Connect). We no longer hide it to wait on an
-      // AppKit bundle -- that wait is what made the sheet appear only after ~5s.
-      showNativeModal();
+      // Don't let send.js's own sheet cover the AppKit modal.
+      hideNativeModal();
       return ensure().then(function (p) {
         if (address) return address;
-        return p;
-      }).then(function (p) {
-        if (address) return address;
-        // Native sheet + direct Freighter deep link (wired in display_uri).
-        // Request BOTH Stellar networks as OPTIONAL namespaces so Freighter can
-        // approve on whichever network it is on, then warn if it is not Testnet.
-        // pairLoop retries once on a TRANSIENT first-tap failure (relay/socket
-        // still warming up) so the user never sees a spurious "couldn't connect".
-        showNativeModal();
-        return pairLoop(p, 2);
+        return loadModal(p).then(function () {
+          // Official flow: open the modal first, then start pairing. The modal
+          // shows Freighter in the featured row; tapping it deep-links into the
+          // Freighter app (or shows a QR in an external browser).
+          try { if (modal) modal.open(); } catch (_) {}
+          return pairLoop(p, 2);
+        });
       });
     },
 
@@ -318,8 +271,10 @@
     }
   };
 
-  // Warm up the UniversalProvider on mobile as soon as the page loads, so the
-  // first "Connect" tap can start pairing immediately instead of waiting on a
-  // multi-second SDK download.
-  if (isMobile()) { try { ensure().catch(function () {}); } catch (_) {} }
+  // Pre-warm the provider AND the AppKit modal on mobile as soon as the page
+  // loads, so the first "Connect" tap opens the modal instantly instead of
+  // waiting ~5s for these bundles to download.
+  if (isMobile()) {
+    try { ensure().then(function (p) { return loadModal(p); }).catch(function () {}); } catch (_) {}
+  }
 })();
