@@ -119,6 +119,12 @@ We keep the marketing honest. Here is the precise status:
   inside the pool via Poseidon commitments/nullifiers and a Merkle membership proof — is the **roadmap target**
   (`circuits/transfer.circom` here covers the amount/solvency/compliance portion; the commitment layer needs a
   BLS12-381-correct Poseidon). The **Pool** and **ASP** contracts are deployed scaffolding for that roadmap.
+- **Witness binding (roadmap):** the proof's `amount` and `balance` are **prover-supplied private witnesses**. The
+  circuit *soundly* proves `amount >= 1`, `amount <= balance`, and `amount <= limit`, but it does **not yet read your
+  real on-chain balance or bind the proof to the specific Stellar payment** (recipient/asset/amount). The browser
+  prover uses your displayed balance when known and **refuses** an amount above it (instead of fabricating
+  `balance = amount`). Binding the proof to settlement — a public payment commitment, or proving inside the pool's
+  `transfer` — is the top roadmap item. See `docs/ARCHITECTURE.md` §6.
 
 Nothing in the UI claims settled shielded value, or an on-chain-verified proof it hasn't actually produced.
 
@@ -147,6 +153,12 @@ contracts/            Soroban verifier (live) / pool / ASP (roadmap scaffolding)
 scripts/              setup.sh, deploy.sh, vk_to_args.js, proof_to_args.js
 docs/ARCHITECTURE.md  Architecture notes
 ```
+
+> **Naming:** the product and on-chain brand is **Zerolyn**. The Git repository is named `shieldplay`
+> and the compiled Soroban wasm crates/artifacts are still named `shieldpay_*` (see `scripts/deploy.sh`).
+> These are legacy build names for the *same* contracts; the crate rename is purely cosmetic and is deferred
+> to avoid churning the already-deployed-and-verified build. When you rename, update the crate `name` in each
+> `contracts/*/Cargo.toml`, the wasm paths in `scripts/deploy.sh`, and any `contractimport!` macro path.
 
 ## Run locally
 
