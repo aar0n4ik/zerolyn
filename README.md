@@ -4,6 +4,8 @@
 > with zero-knowledge proofs, while still letting auditors and regulators verify the
 > truth on-chain. Built for **Stellar Hacks: Real-World ZK**.
 
+**About the builder.** I'm **Bohdan — a 17-year-old developer**, and I built Zerolyn entirely on my own: the Circom circuit, the Soroban contracts, and this app. I'm in this for the long run — I want to build my future in real-world zero-knowledge payments **together with Stellar and the Stellar Development Foundation**, and this hackathon is my first step toward that.
+
 Live demo: a multi-page web app in `index.html` + `assets/` (deploys to Vercel as a static site).
 The Soroban contracts are **deployed and live on Stellar Testnet** — see the IDs below — and both the
 **Verify** page and the **Send** page generate a real Groth16 proof in your browser and verify it **on-chain**.
@@ -57,7 +59,7 @@ on Stellar, which exists to move real people's and institutions' money.
 > with simulated, Groth16-shaped proofs and are clearly labelled **"(demo)"** in the UI. See the honesty section below.
 
 Plus an **Ecosystem** page (`ecosystem.html`) mapping Zerolyn onto the Stellar stack
-(USDC/EURC, Freighter, Albedo, Soroban, Horizon, CCTP, SEP standards, and the **Protocol 22**
+(USDC/EURC, Freighter, Soroban, Horizon, CCTP, SEP standards, and the **Protocol 22**
 BLS12-381 host functions this project relies on).
 
 ## How the ZK works
@@ -192,8 +194,13 @@ python3 -m http.server 8080
 
 ## Author
 
-Designed, built, and shipped solo by a 17-year-old developer — circuit, Soroban contracts,
-and this interface. Socials are in the site footer (GitHub → X → Instagram).
+**Bohdan** — a 17-year-old developer who designed, built, and shipped Zerolyn solo: the Circom
+circuit, the Soroban contracts, and this interface. I'm committed to a long-term future building
+real-world zero-knowledge payments with Stellar.
+
+- GitHub: https://github.com/aar0n4ik
+- X: https://x.com/_AARON4IK_
+- Instagram: https://www.instagram.com/bohdan.aaron4ik/
 
 ## License
 
