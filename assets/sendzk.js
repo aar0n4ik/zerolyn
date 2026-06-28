@@ -41,6 +41,15 @@ var LIMIT_UNITS=CFG.complianceLimit||100000;   // public policy cap, in asset un
   M('uk',{zk_h:'Доведіть переказ у zero-knowledge',zk_lead:'Спершу надішліть реальний платіж у Stellar Testnet вище — потім згенеруйте Groth16-доведення, що САМЕ цей переказ не перевищує публічний комплаєнс-ліміт і вкладається у ваш баланс (баланс прихований), і перевірте його ОНЧЕЙН на нашому верифікаторі Soroban (BLS12-381).',zk_btn:'Довести і перевірити ончейн',zk_busy:'Доводжу в браузері…',zk_busy2:'Перевіряю ончейн…',zk_proofok:'Доведення Groth16 / BLS12-381 згенеровано',zk_done:'Платіж доведено як комплаєнтний і забезпечений — перевірено ОНЧЕЙН',zk_failed:'Ончейн-перевірка не пройдена',zk_over:'Сума вища за публічний комплаєнс-ліміт ({l}) — доведення коректно її відхиляє.',zk_noart:'Артефакти ZK-прувера ще не зібрані. Запустіть scripts/setup.sh, потім set_vk.',zk_sdk:'Stellar SDK або snarkjs не завантажені — оновіть сторінку.',zk_amount:'Введіть суму більше нуля.',zk_stmt:'Публічне твердження: сума ≤ {l} і сума ≤ баланс; сума paid публічна та дорівнює цій сумі. Приховано: баланс.',zk_contract:'Контракт-верифікатор',zk_needpay:'Спершу надішліть платіж вище — доведення підтверджує саме цей переказ.',zk_gate:'Надішліть платіж вище, щоб активувати — доведення прив’язується до вашого реального переказу.',zk_gate_ready:'Готово — доведення підтвердить ваш ончейн-платіж {tx}…',zk_gate_ready_demo:'Готово (демо) — підключіть Freighter і надішліть реальний платіж, щоб прив’язати справжній переказ.',zk_bind:'Прив’язано до щойно надісланої суми ({a} {c}) через публічний вхід paid (paid === amount у схемі).',zk_bind_demo:'Демо: доводжу щойно надіслану суму ({a} {c}) — підключіть гаманець, щоб прив’язати до реального ончейн-платежу.',zk_balreal:'Платоспроможність доведено проти вашого реального ончейн-балансу (Horizon).',zk_real_done:'Цей платіж доведено як комплаєнтний і забезпечений у zero-knowledge — перевірено ОНЧЕЙН',zk_demo_done:'Доведення Groth16 перевірено ОНЧЕЙН — помічене демо. Підключіть Freighter і надішліть реальний платіж у Testnet, щоб прив’язати доведення до справжнього переказу.',zk_paytx:'Транзакція платежу',zk_demo_solv:'Демо: платоспроможність використовує умовний баланс (баланс дорівнює сумі) — підключіть Freighter і надішліть реальний платіж, щоб довести її проти вашого реального ончейн-балансу.'});
 })();
 
+/* ---- reconciliation copy (public `paid` vs the actual on-chain payment) ---- */
+(function(){ if(!window.I18N) return; function M(l,o){ window.I18N[l]=Object.assign(window.I18N[l]||{},o); }
+  M('en',{zk_reconciled:'Public paid input reconciled against the on-chain payment — amount & asset match Horizon.',zk_reconcile_mismatch:'Heads up: could not match the public paid amount to the on-chain payment.'});
+  M('ru',{zk_reconciled:'Публичный вход paid сверён с ончейн-платежом — сумма и актив совпадают с Horizon.',zk_reconcile_mismatch:'Внимание: не удалось сопоставить публичную сумму paid с ончейн-платежом.'});
+  M('es',{zk_reconciled:'Entrada pública paid conciliada con el pago on-chain — importe y activo coinciden con Horizon.',zk_reconcile_mismatch:'Aviso: no se pudo conciliar el importe público paid con el pago on-chain.'});
+  M('de',{zk_reconciled:'Öffentlicher paid-Input mit der On-Chain-Zahlung abgeglichen — Betrag & Asset stimmen mit Horizon überein.',zk_reconcile_mismatch:'Hinweis: Der öffentliche paid-Betrag konnte nicht mit der On-Chain-Zahlung abgeglichen werden.'});
+  M('uk',{zk_reconciled:'Публічний вхід paid звірено з ончейн-платежем — сума та актив збігаються з Horizon.',zk_reconcile_mismatch:'Увага: не вдалося зіставити публічну суму paid з ончейн-платежем.'});
+})();
+
 function sdk(){ return window.StellarSdk; }
 function rpcMod(){ var S=sdk(); return S.rpc||S.SorobanRpc; }
 function server(){ var R=rpcMod(); return new R.Server(RPC_URL,{allowHttp:RPC_URL.indexOf('https')!==0}); }
@@ -70,7 +79,9 @@ function receiptVisible(){ var r=$('receipt'); if(!r) return false; var st; try{
 function txText(){ var el=$('r_tx'); return el?((el.textContent||'').trim()):''; }
 function txHref(){ var el=$('txview'); return el&&el.getAttribute('href')||''; }
 function paymentDone(){ return receiptVisible() && !!txText(); }
-function isRealPayment(){ var tx=(txText()||'').toLowerCase(); var dep=(CFG.verifierTxHash||'').toLowerCase(); var dem=(CFG.demoTxHash||'').toLowerCase(); return /^[0-9a-f]{64}$/.test(tx) && tx!==dep && tx!==dem && !!connectedAddr(); }
+function fullTxHash(){ var h=txHref()||''; var m=h.match(/\/tx\/([0-9a-f]{64})/i); if(m) return m[1].toLowerCase(); var tx=(txText()||'').toLowerCase(); return /^[0-9a-f]{64}$/.test(tx)?tx:''; }
+function isRealPayment(){ var tx=fullTxHash(); var dep=(CFG.verifierTxHash||'').toLowerCase(); var dem=(CFG.demoTxHash||'').toLowerCase(); return !!tx && tx!==dep && tx!==dem && !!connectedAddr(); }
+async function reconcilePaid(hash,amtUnits,code){ try{ var res=await fetch(HORIZON+'/transactions/'+encodeURIComponent(hash)+'/payments?limit=20'); if(!res.ok) return null; var j=await res.json(); var recs=(j&&j._embedded&&j._embedded.records)||[]; for(var i=0;i<recs.length;i++){ var p=recs[i]; var pamt=(p.type==='create_account')?p.starting_balance:p.amount; if(pamt==null) continue; var codeOk=(code==='XLM'||!code)?(p.asset_type==='native'||p.type==='create_account'):(p.asset_code===code); if(codeOk && Math.abs(parseFloat(pamt)-Number(amtUnits))<=0.0000001) return {ok:true,amount:parseFloat(pamt)}; } return {ok:false}; }catch(e){ return null; } }
 function assetCode(){ var r=$('r_amt'); var s=r&&(r.textContent||''); var m=s&&s.match(/\b(XLM|USDC|EURC)\b/); if(m) return m[1]; var sel=$('asset'); if(sel&&sel.value){ var v=String(sel.value); var mm=v.match(/\b(XLM|USDC|EURC)\b/); if(mm) return mm[1]; return v.split(':')[0]; } return 'XLM'; }
 function sentAmountUnits(){ var r=$('r_amt'); var s=r&&(r.textContent||''); var m=s&&s.match(/([0-9]+(?:[.,][0-9]+)?)/); if(m) return parseFloat(m[1].replace(',','.')); var a=$('amt'); return a?parseFloat(a.value||'0'):0; }
 async function fetchBalanceUnits(addr,code){ try{ var res=await fetch(HORIZON+'/accounts/'+encodeURIComponent(addr)); if(!res.ok) return null; var j=await res.json(); var bals=(j&&j.balances)||[]; for(var i=0;i<bals.length;i++){ var bb=bals[i]; if((code==='XLM'||!code)&&bb.asset_type==='native') return parseFloat(bb.balance); if(bb.asset_code===code) return parseFloat(bb.balance); } return null; }catch(e){ return null; } }
@@ -116,7 +127,11 @@ async function run(){
     if(realBal) line('mut',t('zk_balreal')); else line('warn',t('zk_demo_solv'));
     var doneMsg=real?t('zk_real_done'):t('zk_demo_done');
     line('ok','✅ '+doneMsg);
-    if(real){ var href=txHref()||((CFG.explorer||'')+'/tx/'+(txText()||'')); var pl=document.createElement('a'); pl.className='link-ext'; pl.target='_blank'; pl.rel='noopener'; pl.href=href; pl.textContent=t('zk_paytx')+' ↗'; out().appendChild(pl); }
+    if(real){
+      var fh=fullTxHash();
+      if(fh){ var rec=await reconcilePaid(fh,amtF,code); if(rec&&rec.ok){ line('ok','🔗 '+t('zk_reconciled')); } else if(rec&&rec.ok===false){ line('warn',t('zk_reconcile_mismatch')); } }
+      var href=txHref()||((CFG.explorer||'')+'/tx/'+(txText()||'')); var pl=document.createElement('a'); pl.className='link-ext'; pl.target='_blank'; pl.rel='noopener'; pl.href=href; pl.textContent=t('zk_paytx')+' ↗'; out().appendChild(pl);
+    }
     var ex=document.createElement('a'); ex.className='link-ext'; ex.target='_blank'; ex.rel='noopener'; ex.href=(CFG.explorer||'')+'/contract/'+CFG.verifierContractId; ex.textContent=t('zk_contract')+' ↗'; out().appendChild(ex);
     if(window.SP_Sound&&window.SP_Sound.success) window.SP_Sound.success();
     toast(doneMsg,'ok');
