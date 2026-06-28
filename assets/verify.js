@@ -123,7 +123,9 @@ async function genProof(){
     renderStats({proof:r.proof,sigs:r.publicSignals},{genMs:lastGenMs});
     S_.soft();
   }catch(e){
-    clear(); line('warn',t('ver_no_artifacts'));
+    var em=(e&&e.message)?e.message:String(e);
+    var art=/fetch|wasm|zkey|404|network|not.?found|failed to (load|fetch)/i.test(em);
+    clear(); if(art){ line('warn',t('ver_no_artifacts')); } else { line('er','\u2717 '+em.slice(0,200)); }
   }finally{ busy=false; gb.disabled=false; gb.textContent=old; }
 }
 
