@@ -25,7 +25,7 @@ var lastGenMs=null;
 
 var RPC_URL=CFG.sorobanRpc||'https://soroban-testnet.stellar.org';
 var NET_PASS=CFG.networkPassphrase||'Test SDF Network ; September 2008';
-var G2ORDER=CFG.g2Order||'c0c1';
+var G2ORDER=CFG.g2Order||'c1c0';
 
 /* ---- accurate i18n (runs after app.js, so it wins) ---- */
 (function(){ if(!window.I18N) return; function M(l,o){ window.I18N[l]=Object.assign(window.I18N[l]||{},o); }

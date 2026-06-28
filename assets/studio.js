@@ -105,7 +105,7 @@ async function run(){
   try{
     var nw=(window.performance&&performance.now)?function(){return performance.now();}:function(){return Date.now();};
     var t0=nw();
-    var r=await window.snarkjs.groth16.fullProve({amount:String(v.a),balance:String(v.b),limit:String(v.l)},'assets/zk/transfer.wasm','assets/zk/transfer_final.zkey');
+    var r=await window.snarkjs.groth16.fullProve({amount:String(v.a),balance:String(v.b),limit:String(v.l),paid:String(v.a)},'assets/zk/transfer.wasm','assets/zk/transfer_final.zkey');
     var ms=Math.round(nw()-t0);
     renderProof(r.proof,r.publicSignals,ms);
     var pf=$('proof'); if(pf) pf.value=JSON.stringify({proof:r.proof,publicSignals:r.publicSignals},null,2);
