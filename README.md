@@ -1,6 +1,6 @@
 # Zerolyn — Compliant Private Payments on Stellar
 
-> **Privacy by default, provability on demand.** Zerolyn hides amounts and balances
+> **Privacy by default, provability on demand.** Zerolyn hides balances and proves compliance
 > with zero-knowledge proofs, while still letting auditors and regulators verify the
 > truth on-chain. Built for **Stellar Hacks: Real-World ZK**.
 
