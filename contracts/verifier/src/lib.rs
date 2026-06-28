@@ -11,7 +11,7 @@
 //!
 //! Serialization (uncompressed, big-endian; produced by scripts/vk_to_args.js
 //! and scripts/proof_to_args.js):
-//!   Fp = 48 bytes, G1 = 96 bytes (x||y), G2 = 192 bytes (x.c0||x.c1||y.c0||y.c1),
+//!   Fp = 48 bytes, G1 = 96 bytes (x||y), G2 = 192 bytes (x.c1||x.c0||y.c1||y.c0),
 //!   Fr / public inputs = 32 bytes big-endian.
 //!
 //! The verifying key is produced by scripts/setup.sh (snarkjs zkey export over

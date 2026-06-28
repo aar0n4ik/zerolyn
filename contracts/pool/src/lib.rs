@@ -2,12 +2,15 @@
 //! Zerolyn — shielded pool contract (Soroban)
 //!
 //! Holds USDC deposits, tracks the Poseidon commitment Merkle root, spent
-//! nullifiers, and only settles a private transfer when the Groth16 verifier
-//! accepts the proof AND the recipient is in the ASP allow-list root.
+//! nullifiers, and settles a private transfer once the Groth16 verifier
+//! accepts the proof. Binding the recipient to the ASP allow-list root is part
+//! of the full pool circuit that this transfer is designed for.
 //!
-//! This is the contract that makes the ZK "load-bearing": `transfer` is the
-//! only way value moves between notes, and it cannot succeed without a valid
-//! proof verified on-chain.
+//! Design intent: `transfer` is the only way value moves between notes and
+//! cannot succeed without a valid proof verified on-chain. The live hackathon
+//! demo verifies the compliance circuit (circuits/transfer.circom, public
+//! signals [limit, paid]) through the verifier contract directly; wiring this
+//! pool to its full pool-circuit is the next implementation step.
 
 use soroban_sdk::{
     contract, contracterror, contractimpl, contracttype, token, Address, BytesN, Env, Vec,

@@ -2,9 +2,9 @@
 //! Zerolyn — ASP (Association Set Provider) allow-list contract
 //!
 //! Maintains the Merkle root of approved (KYC'd / non-sanctioned) recipient
-//! pubkeys. The pool's transfer proof must show membership in this root, so a
-//! shielded transfer to a non-approved address is impossible — this is how
-//! Zerolyn keeps privacy AND compliance at the same time.
+//! pubkeys. The pool's transfer proof is designed to show membership in this
+//! root, so a shielded transfer to a non-approved address is rejected — this
+//! is how Zerolyn is designed to keep privacy AND compliance together.
 
 use soroban_sdk::{contract, contracterror, contractimpl, contracttype, Address, BytesN, Env};
 
