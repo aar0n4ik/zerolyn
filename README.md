@@ -27,6 +27,8 @@ The verifier's **verifying key is installed on-chain** (via `set_vk`), so a live
 `verify(proof, public_inputs)` call runs the real BLS12-381 pairing inside Stellar's host.
 These IDs are wired into `assets/app.js → CONFIG`.
 
+**Live proof verification (on-chain):** a real `verify(proof, public_inputs)` call ran the BLS12-381 pairing inside Stellar's host and returned `true` — [view the transaction](https://stellar.expert/explorer/testnet/tx/1f96661ce7d3eafffd7cfe07c1f6d4cab83d1c0aa04bec9c866beebb47e652c4). A tampered public input returns `false` (not an error), so a rejected proof is distinguishable from malformed inputs.
+
 > **Note on scope:** the live, on-chain-verified ZK path is the **Verifier** + `circuits/transfer.circom`
 > (a real Groth16 proof of solvency + compliance, checked by the BLS12-381 pairing). The **Pool** and
 > **ASP** contracts are deployed scaffolding for the **shielded-pool roadmap** (Poseidon commitments /
@@ -181,6 +183,7 @@ python3 -m http.server 8080
 
 - Open the **Verifier** contract in the explorer (link above) and inspect its `verify` invocations.
 - On `verify.html`, generate a proof in your browser and watch it return `true` from the on-chain `verify` call via Soroban RPC.
+- Or inspect the live verification transaction we recorded: [1f96661ce7d3eaff…](https://stellar.expert/explorer/testnet/tx/1f96661ce7d3eafffd7cfe07c1f6d4cab83d1c0aa04bec9c866beebb47e652c4).
 - On `send.html`, send a real Testnet payment and open the resulting tx hash on Stellar Expert.
 
 ## Hackathon submission checklist
