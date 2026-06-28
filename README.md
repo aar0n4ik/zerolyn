@@ -48,7 +48,7 @@ on Stellar, which exists to move real people's and institutions' money.
 | Module | What it proves (in zero knowledge) | Page |
 |---|---|---|
 | **On-chain verifier** | A real Groth16 proof is verified on-chain by a Soroban contract (BLS12-381 pairing in Stellar's host) | `verify.html` |
-| **Compliant transfer** | A transfer's hidden amount is `>= 1`, `<=` your hidden balance (solvency), and `<=` a public compliance limit — verified on-chain | `send.html` |
+| **Compliant transfer** | A transfer's hidden amount is `>= 1`, `<=` your hidden balance (solvency), `<=` a public compliance limit, and `===` a public `paid` amount — verified on-chain | `send.html` |
 | **zkKYC identity** (demo) | You passed KYC, are 18+, and are not sanctioned — without revealing identity | `compliance.html` |
 | **Selective disclosure** (demo) | A one-time auditor *view key* opens exactly one transaction | `compliance.html` |
 | **Privacy pool / proof-of-innocence** (demo) | Your funds belong to a clean association set | `pools.html` |
@@ -67,9 +67,10 @@ BLS12-381 host functions this project relies on).
 ## How the ZK works
 
 1. **Circuit** — `circuits/transfer.circom` is a Circom circuit compiled over the **bls12381** prime.
-   It proves, in zero knowledge, that a transfer is **solvent and compliant** without revealing the numbers:
-   private `amount` and `balance`, public `limit`, with constraints `amount >= 1`, `amount <= balance`
-   (solvency) and `amount <= limit` (compliance). Range checks use circomlib's field-agnostic comparators
+   It proves, in zero knowledge, that a transfer is **solvent and compliant** without revealing the hidden numbers:
+   private `amount` and `balance`, public `limit` and `paid`, with constraints `amount >= 1`, `amount <= balance`
+   (solvency), `amount <= limit` (compliance) and `amount === paid` (the hidden amount equals the public `paid`, so
+   it can be reconciled against the on-chain payment). Range checks use circomlib's field-agnostic comparators
    (`Num2Bits` + arithmetic), so **no curve-specific Poseidon is required** — it runs on BLS12-381 today.
 2. **Trusted setup / keys** — `scripts/setup.sh` runs the Groth16 setup with snarkjs and exports the
    proving key (`assets/zk/transfer_final.zkey`), the WASM witness generator (`assets/zk/transfer.wasm`), and the
@@ -106,7 +107,8 @@ We keep the marketing honest. Here is the precise status:
   pairing check on BLS12-381** via Stellar's native host functions — there is **no stub and no placeholder**.
 - It is **deployed on Stellar Testnet** (ID above) and its **verifying key is installed on-chain** via `set_vk`.
 - The on-chain circuit is a **meaningful compliance + solvency statement** (`circuits/transfer.circom`):
-  it proves a hidden `amount` is `>= 1`, `<=` a hidden `balance`, and `<=` a public `limit`. Only the limit is public.
+  it proves a hidden `amount` is `>= 1`, `<=` a hidden `balance`, `<=` a public `limit`, and `=== paid`
+  (a public input). The hidden `amount` and `balance` stay private; the two public inputs are `limit` and `paid`.
 - `verify.html` does the whole path for real: it **generates a Groth16 proof in your browser** with snarkjs
   over that BLS12-381 circuit (artifacts in `assets/zk/`), then **verifies it on-chain** by calling the contract
   through Soroban RPC. The pairing actually executes inside Stellar's host; you can optionally record a real tx.
@@ -124,12 +126,13 @@ We keep the marketing honest. Here is the precise status:
   (`circuits/transfer.circom` here covers the amount/solvency/compliance portion; the commitment layer needs a
   BLS12-381-correct Poseidon). The **Pool** and **ASP** contracts are deployed scaffolding for that roadmap.
 - **Witness binding:** `amount` and `balance` are prover-supplied private witnesses. On `send.html` the proof is now
-  **gated on a completed Stellar Testnet payment**, proves the **exact amount you just sent** (bound via the public
-  `paid` input, with `paid === amount` enforced in-circuit), and uses your **real on-chain balance read from Horizon**
-  (`balance_before = balance_now + amount_sent`) for the solvency statement. What remains **roadmap** is
-  cryptographically binding the proof to the specific payment *inside* the circuit (a public commitment to
-  recipient/asset/amount) and settling shielded value in the pool (Poseidon commitments / nullifiers / Merkle
-  membership). See `docs/ARCHITECTURE.md` §6.
+  **gated on a completed Stellar Testnet payment**, proves the **exact amount you just sent** (exposed via the public
+  `paid` input, with `paid === amount` enforced in-circuit so the hidden amount equals the public one), and uses your
+  **real on-chain balance read from Horizon** (`balance_before = balance_now + amount_sent`) for the solvency statement.
+  `paid` is still a prover-supplied witness; what remains **roadmap** is **automatically verifying `paid` against the
+  Horizon payment** and cryptographically binding the proof to the specific payment *inside* the circuit (a public
+  commitment to recipient/asset/amount), plus settling shielded value in the pool (Poseidon commitments / nullifiers /
+  Merkle membership). See `docs/ARCHITECTURE.md` §6.
 
 Nothing in the UI claims settled shielded value, or an on-chain-verified proof it hasn't actually produced.
 
