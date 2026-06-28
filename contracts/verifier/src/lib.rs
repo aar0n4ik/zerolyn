@@ -144,7 +144,9 @@ impl VerifierContract {
         if bls.pairing_check(g1s, g2s) {
             Ok(true)
         } else {
-            Err(Error::VerificationFailed)
+            // A well-formed but invalid proof returns Ok(false) (not an error),
+            // so callers can distinguish "proof rejected" from "bad inputs".
+            Ok(false)
         }
     }
 }
