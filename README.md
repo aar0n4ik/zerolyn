@@ -19,9 +19,9 @@ explorer to see its deployment and invocations:
 
 | Contract | ID | Explorer |
 |---|---|---|
-| **Verifier** (Groth16 / BLS12-381) | `CC47UVUPXER6VGOFZJWGIR4DQHMRA426NHLJDBGTPKA5C5HLG3LOB54Y` | [view](https://stellar.expert/explorer/testnet/contract/CC47UVUPXER6VGOFZJWGIR4DQHMRA426NHLJDBGTPKA5C5HLG3LOB54Y) |
-| **Pool** (shielded transfers — roadmap) | `CDKZPEIVUNGRGIYD6ZT4RWLZBERQX6MUO5FZVIIQP3FRPD67LM624NW3` | [view](https://stellar.expert/explorer/testnet/contract/CDKZPEIVUNGRGIYD6ZT4RWLZBERQX6MUO5FZVIIQP3FRPD67LM624NW3) |
-| **ASP** (association-set allow-list — roadmap) | `CDATVE3EWOOCTINRRF27GGH4MNHF7NUOAWJ6VY2SXHLXOWCZMGUTSZ3J` | [view](https://stellar.expert/explorer/testnet/contract/CDATVE3EWOOCTINRRF27GGH4MNHF7NUOAWJ6VY2SXHLXOWCZMGUTSZ3J) |
+| **Verifier** (Groth16 / BLS12-381) | `CC2KRFKDLPXHEO2ZLI5PNN4Q3QQUKFLUWQSORQZLUWZH4LKLSUY4ZWTF` | [view](https://stellar.expert/explorer/testnet/contract/CC2KRFKDLPXHEO2ZLI5PNN4Q3QQUKFLUWQSORQZLUWZH4LKLSUY4ZWTF) |
+| **Pool** (shielded transfers — roadmap) | `CBNYV5VE7HNPB4KWT2LM65QB4GAYGIUJEKEFT7KSXFR7VGMQEYO3A2MV` | [view](https://stellar.expert/explorer/testnet/contract/CBNYV5VE7HNPB4KWT2LM65QB4GAYGIUJEKEFT7KSXFR7VGMQEYO3A2MV) |
+| **ASP** (association-set allow-list — roadmap) | `CBVNX4YVRO2SR2YZL4PRKTLISAUD4MS5DYF7535IHTOPVUOMVLCMFSD3` | [view](https://stellar.expert/explorer/testnet/contract/CBVNX4YVRO2SR2YZL4PRKTLISAUD4MS5DYF7535IHTOPVUOMVLCMFSD3) |
 
 The verifier's **verifying key is installed on-chain** (via `set_vk`), so a live
 `verify(proof, public_inputs)` call runs the real BLS12-381 pairing inside Stellar's host.
