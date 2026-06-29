@@ -30,7 +30,7 @@ f5_t:'Proof of reserves',f5_d:'Custodians prove solvency \u2014 that reserves co
 f6_t:'On-chain verifier',f6_d:'Every proof is checked by a public Soroban verifier contract on Stellar Testnet, with a real transaction hash.',
 feat_more:'Open',
 how_eyebrow:'How it works',how_h:'Four steps, fully verifiable',how_lead:'No trusted server. The math is checked by a smart contract, not by us.',
-how_s1t:'Build the statement',how_s1d:'Your browser forms a private witness: amount, sender and recipient never leave your device.',
+how_s1t:'Build the statement',how_s1d:'Your browser builds a private witness locally: your balance stays on your device \u2014 only a succinct zero-knowledge proof leaves it.',
 how_s2t:'Generate the proof',how_s2d:'A Groth16 circuit produces a zero-knowledge proof that the transfer is valid and balances stay correct.',
 how_s3t:'Verify on Stellar',how_s3d:'A Soroban verifier contract checks the proof on-chain and settles the shielded transfer on Testnet.',
 how_s4t:'Disclose if needed',how_s4d:'Share a view key with an auditor for selective, provable disclosure \u2014 nobody else can see it.',
@@ -55,7 +55,7 @@ send_receipt:'Compliance receipt',send_rcpt_from:'From',send_rcpt_to:'To',send_r
 send_qr_h:'Request a private payment',send_qr_lead:'Generate a SEP-7 QR code. Anyone can scan it with a Stellar wallet to pay you privately \u2014 no copy-pasting addresses.',send_qr_btn:'Generate QR request',send_qr_hint:'Scan with Freighter or any SEP-7 wallet',
 send_disc_h:'Selective disclosure',send_disc_lead:'Generate a one-time view key. An auditor with this key \u2014 and nobody else \u2014 can decrypt and verify this exact transfer.',send_disc_btn:'Generate view key',send_disc_copy:'Copy view key',send_disc_note:'Hand this to an auditor for provable, scoped disclosure. Without it the transfer stays fully private.',
 copied:'Copied to clipboard',
-stepv_w:'Form private witness',stepv_wd:'amount + recipient stay local',stepv_p:'Generate Groth16 proof',stepv_pd:'Groth16 / BLS12-381, in-browser',stepv_c:'Verify on Soroban',stepv_cd:'on-chain verifier contract',stepv_s:'Settle shielded transfer',stepv_sd:'Stellar Testnet',
+stepv_w:'Form private witness',stepv_wd:'balance stays local',stepv_p:'Generate Groth16 proof',stepv_pd:'Groth16 / BLS12-381, in-browser',stepv_c:'Verify on Soroban',stepv_cd:'on-chain verifier contract',stepv_s:'Settle shielded transfer',stepv_sd:'Stellar Testnet',
 /* ===== COMPLIANCE ===== */
 compliance_title:'zk Compliance',
 comp_h:'Compliance without surveillance',comp_lead:'Prove who you are allowed to be \u2014 not who you are. zkKYC lets users prove they passed checks while keeping their identity private.',

@@ -10,7 +10,7 @@ async function run(btnId,doneId,toastKey){
   ZK.makeProof(); $(doneId).style.display=''; S.success(); toast(t(toastKey),'ok'); busy=false; b.disabled=false;
 }
 window.SP={ ready:function(){
-  $('yourdep').textContent='0x'+ZK.rndHex(10)+'\u2026';
+  $('yourdep').textContent=ZK.rndHex(10)+'\u2026';
   $('innbtn').addEventListener('click',function(){ run('innbtn','inndone','pool_inn_done'); });
   $('porbtn').addEventListener('click',function(){ run('porbtn','pordone','por_done'); });
 } };

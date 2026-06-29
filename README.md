@@ -115,6 +115,8 @@ We keep the marketing honest. Here is the precise status:
 - `send.html` does **two real things**: (1) a real Stellar Testnet payment signed in your wallet and submitted via
   Horizon (real tx hash), and (2) **"Prove this transfer"**, which builds a real Groth16 proof for the exact amount you just
   sent (hidden) against your real balance (hidden, read from Horizon) and the public compliance limit, and **verifies it on-chain**.
+  After verification it also **reconciles the public `paid` value against the actual on-chain payment** — it re-fetches the
+  transaction from Horizon and checks the settled amount and asset match before showing the result as reconciled.
 - Address validation, wallet connect (Freighter desktop + Freighter Mobile via WalletConnect), SEP-7 QR and the PDF receipt are real features.
 
 **Demo / simulated (clearly labelled in the UI)**
@@ -129,10 +131,11 @@ We keep the marketing honest. Here is the precise status:
   **gated on a completed Stellar Testnet payment**, proves the **exact amount you just sent** (exposed via the public
   `paid` input, with `paid === amount` enforced in-circuit so the hidden amount equals the public one), and uses your
   **real on-chain balance read from Horizon** (`balance_before = balance_now + amount_sent`) for the solvency statement.
-  `paid` is still a prover-supplied witness; what remains **roadmap** is **automatically verifying `paid` against the
-  Horizon payment** and cryptographically binding the proof to the specific payment *inside* the circuit (a public
-  commitment to recipient/asset/amount), plus settling shielded value in the pool (Poseidon commitments / nullifiers /
-  Merkle membership). See `docs/ARCHITECTURE.md` §6.
+  After on-chain verification the app now **automatically reconciles the public `paid` value against the actual Stellar
+  payment** — it re-fetches the transaction from Horizon and checks that the settled amount and asset match. What remains
+  **roadmap** is cryptographically binding the proof to the specific payment *inside* the circuit (a public commitment to
+  recipient/asset/amount, so the link is trustless instead of checked by the client), plus settling shielded value in the
+  pool (Poseidon commitments / nullifiers / Merkle membership). See `docs/ARCHITECTURE.md` §6.
 
 Nothing in the UI claims settled shielded value, or an on-chain-verified proof it hasn't actually produced.
 
