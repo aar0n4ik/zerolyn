@@ -262,6 +262,7 @@ ul.tight li{margin:4px 0;color:var(--ink-soft);font-size:14.5px}
 /* ---- ecosystem page polish ---- */
 .tag{white-space:nowrap}
 body[data-title-key="ecosystem_title"] .section h3.eyebrow{margin:34px 0}
-body[data-title-key="ecosystem_title"] .panel-head{flex-wrap:wrap}
-body[data-title-key="ecosystem_title"] .panel-head h3{min-width:0}
-body[data-title-key="ecosystem_title"] .panel-head .tag{flex:none}
+/* ecosystem cards: clean header (no form-panel bar) — title left, status right, on one level */
+body[data-title-key="ecosystem_title"] .card .panel-head{background:transparent;border-bottom:0;padding:0;margin-bottom:10px;gap:12px;justify-content:space-between;align-items:center;flex-wrap:nowrap}
+body[data-title-key="ecosystem_title"] .card .panel-head h3{font-size:17px;font-weight:700;letter-spacing:-.01em;min-width:0}
+body[data-title-key="ecosystem_title"] .card .panel-head .tag{flex:none}
