@@ -41,7 +41,7 @@ road_q2:'Q4 2026',road_q2t:'Mainnet alpha',road_q2d:'Deploy shielded USDC transf
 road_q3:'Q1 2027',road_q3t:'Compliance SDK',road_q3d:'Release a zkKYC + selective-disclosure SDK so any wallet can add compliant privacy.',
 road_q4:'Q2 2027',road_q4t:'Confidential tokens',road_q4d:'Support confidential token issuance for fintechs and stablecoin issuers.',
 road_q5:'Q3 2027',road_q5t:'Remittance corridor',road_q5d:'Launch a private cross-border corridor with a licensed anchor partner.',
-about_eyebrow:'About the builder',about_h:'Built solo, end to end',about_p1:'I am a 17 year old developer and I designed, built and shipped Zerolyn entirely on my own \u2014 the circuits, the Soroban contracts and this interface.',about_p2:'I joined Stellar Hacks: Real-World ZK to prove that zero-knowledge can make real money both private and compliant. This is my shot at first place.',
+about_eyebrow:'About the builder',about_h:'Built solo, end to end',about_p1:'I am a 17-year-old developer and I designed, built and shipped Zerolyn entirely on my own \u2014 the circuits, the Soroban contracts and this interface.',about_p2:'I joined Stellar Hacks: Real-World ZK to prove that zero-knowledge can make real money both private and compliant. This is my shot at first place.',
 cta_h:'Try a private transfer now',cta_p:'Connect a wallet, generate a real zero-knowledge proof and verify it on Stellar Testnet.',cta_btn:'Launch the app',
 /* ===== SEND ===== */
 send_title:'Private transfer',
