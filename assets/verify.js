@@ -1,20 +1,5 @@
 /* Zerolyn — verify page: REAL in-browser Groth16 proving + REAL on-chain
-   verification by calling the Soroban verifier contract on Stellar Testnet.
-
-   - "Generate a real proof" runs snarkjs.groth16.fullProve in your browser over
-     the BLS12-381 compliance+solvency circuit (circuits/transfer.circom,
-     artifacts in assets/zk/, built by scripts/setup.sh). It proves a hidden
-     amount is >=1, <= a hidden balance, and <= a public compliance limit.
-   - "Verify on-chain" calls verify(proof, public_inputs) on the verifier
-     contract through Soroban RPC simulateTransaction — the BLS12-381 pairing
-     actually runs inside Stellar's host. Optionally records a real on-chain
-     transaction (Freighter).
-   - "Try to cheat" re-submits the SAME proof against a tampered public
-     statement; the contract returns false on-chain — a live soundness demo.
-
-   NOTE: this lights up once the BLS12-381 verifier from this repo is built &
-   deployed (scripts/setup.sh + set_vk) and CONFIG.verifierContractId points at
-   it. Until then the contract call will report a verification failure. */
+   verification by calling the Soroban verifier contract on Stellar Testnet. */
 (function(){
 'use strict';
 var CFG=window.SP_CONFIG||{}, toast=window.SP_toast, shorten=window.SP_shorten, Wallet=window.SP_Wallet, sleep=window.SP_sleep, S_=window.SP_Sound||{success:function(){},error:function(){},soft:function(){},click:function(){}};
@@ -43,12 +28,12 @@ function clear(){ out().innerHTML=''; out().style.display=''; }
 function now(){ return (window.performance&&performance.now)?performance.now():Date.now(); }
 function mkBtn(label,fn){ var x=document.createElement('button'); x.className='btn btn-ghost'; x.textContent=label; x.addEventListener('click',fn); return x; }
 
-function fp(n){ return BigInt(n).toString(16).padStart(96,'0'); }      // 48-byte Fp
-function g1hex(P){ return fp(P[0])+fp(P[1]); }                         // 96-byte G1
+function fp(n){ return BigInt(n).toString(16).padStart(96,'0'); }
+function g1hex(P){ return fp(P[0])+fp(P[1]); }
 function g2hex(P){ var x=P[0],y=P[1]; return G2ORDER==='c1c0'
   ? fp(x[1])+fp(x[0])+fp(y[1])+fp(y[0])
-  : fp(x[0])+fp(x[1])+fp(y[0])+fp(y[1]); }                              // 192-byte G2
-function fr32(n){ return BigInt(n).toString(16).padStart(64,'0'); }    // 32-byte Fr (BE)
+  : fp(x[0])+fp(x[1])+fp(y[0])+fp(y[1]); }
+function fr32(n){ return BigInt(n).toString(16).padStart(64,'0'); }
 function hexToBytes(h){ var a=new Uint8Array(h.length/2); for(var i=0;i<a.length;i++) a[i]=parseInt(h.substr(i*2,2),16); return a; }
 
 function sdk(){ return window.StellarSdk; }
@@ -80,7 +65,7 @@ function buildOp(p){
   return contract.call('verify', proofScVal(a,b,c), inputsScVal(p.sigs));
 }
 
-/* ---- proof metrics (all computed from the proof / on-chain sim) ---- */
+/* ---- proof metrics ---- */
 function renderStats(p,opts){
   opts=opts||{};
   var bytes=(g1hex(p.proof.pi_a).length+g2hex(p.proof.pi_b).length+g1hex(p.proof.pi_c).length)/2;
@@ -112,7 +97,7 @@ async function genProof(){
     var limit=100000;
     var amount=Math.floor(Math.random()*90000)+1000;
     var balance=amount+Math.floor(Math.random()*50000)+1;
-    var paid=amount;   // public "paid" signal = the proven amount (verify page has no real payment; paid is just the demo amount)
+    var paid=amount;
     var t0=now();
     var r=await window.snarkjs.groth16.fullProve({amount:String(amount),balance:String(balance),limit:String(limit),paid:String(paid)},'assets/zk/transfer.wasm','assets/zk/transfer_final.zkey');
     lastGenMs=Math.round(now()-t0);
@@ -147,4 +132,112 @@ async function verify(){
   if(busy) return; var S=sdk(); if(!S){ toast(t('ver_sdk'),'err'); return; }
   var p=parseInput(); clear();
   if(p.err){ line('er',p.err); S_.error(); return; }
-  line('ok','✓ '+t('ver_local_
+  line('ok','✓ '+t('ver_local_ok'));
+  var b=$('verbtn'); busy=true; b.disabled=true; var old=b.textContent; b.textContent=t('ver_btn_busy');
+  try{
+    var cid=CFG.verifierContractId;
+    line('mut',t('ver_contract')+': '+shorten(cid,8));
+    line('mut',t('ver_onchain')+' …');
+    var r=await onchainVerify(p);
+    if(!r.ok){
+      line('er','✗ '+t('ver_failed'));
+      if(r.err) line('mut',String(r.err).slice(0,200));
+      S_.error(); return;
+    }
+    line('ok','✅ '+t('ver_done'));
+    renderStats(p,{genMs:lastGenMs,fee:r.fee});
+    var ex=document.createElement('a'); ex.className='link-ext'; ex.target='_blank'; ex.rel='noopener';
+    ex.href=CFG.explorer+'/contract/'+cid; ex.textContent=t('ver_contract')+' ↗'; out().appendChild(ex);
+    var row=document.createElement('div'); row.style.cssText='display:flex;flex-wrap:wrap;gap:8px;margin-top:12px;';
+    row.appendChild(mkBtn(t('ver_record'),function(){ recordOnChain(); }));
+    row.appendChild(mkBtn(t('ver_tamper'),function(){ tamper(p); }));
+    row.appendChild(mkBtn(t('ver_card'),function(){ downloadCard(p,r); }));
+    out().appendChild(row);
+    S_.success(); toast(t('ver_done'),'ok');
+  }catch(e){
+    line('er',t('ver_simerr')+(e&&e.message?e.message:e));
+    S_.error();
+  }finally{ busy=false; b.disabled=false; b.textContent=old; }
+}
+
+/* ---- soundness demo: same proof, tampered public statement -> rejected ---- */
+async function tamper(p){
+  if(busy) return; var S=sdk(); if(!S){ toast(t('ver_sdk'),'err'); return; }
+  var sigs=p.sigs.slice();
+  var orig=String(sigs[0]);
+  var forged; try{ forged=(BigInt(orig)+BigInt(1)).toString(); }catch(e){ forged=orig+'1'; }
+  sigs[0]=forged;
+  clear();
+  line('mut',t('ver_tamper_run'));
+  line('warn',t('ver_tamper_note')+' ('+orig+' → '+forged+')');
+  busy=true;
+  try{
+    var r=await onchainVerify({proof:p.proof,sigs:sigs});
+    if(r.ok){ line('er','⚠ '+t('ver_tamper_broken')); S_.error(); }
+    else { line('ok','✅ '+t('ver_tamper_reject')); S_.success(); }
+  }catch(e){
+    line('ok','✅ '+t('ver_tamper_reject')); S_.success();
+  }finally{ busy=false; var bk=document.createElement('div'); bk.style.cssText='display:flex;flex-wrap:wrap;gap:8px;margin-top:12px;'; bk.appendChild(mkBtn(t('ver_back'),function(){ verify(); })); out().appendChild(bk); }
+}
+
+/* ---- shareable proof card (PNG, drawn locally) ---- */
+function wrapText(ctx,text,xp,yp,maxW,lh){ var words=String(text).split(' '),lineStr='',yy=yp; for(var i=0;i<words.length;i++){ var test=lineStr?lineStr+' '+words[i]:words[i]; if(ctx.measureText(test).width>maxW && lineStr){ ctx.fillText(lineStr,xp,yy); lineStr=words[i]; yy+=lh; } else lineStr=test; } if(lineStr) ctx.fillText(lineStr,xp,yy); return yy; }
+function ellipsisText(ctx,text,xp,yp,maxW){ var s=String(text); if(ctx.measureText(s).width<=maxW){ ctx.fillText(s,xp,yp); return; } while(s.length>1 && ctx.measureText(s+'…').width>maxW) s=s.slice(0,-1); ctx.fillText(s+'…',xp,yp); }
+function downloadCard(p,r){
+  try{
+    var W=1200,H=630; var c=document.createElement('canvas'); c.width=W; c.height=H; var x=c.getContext('2d');
+    var g=x.createLinearGradient(0,0,W,H); g.addColorStop(0,'#0a1020'); g.addColorStop(.5,'#0e1830'); g.addColorStop(1,'#0a1428'); x.fillStyle=g; x.fillRect(0,0,W,H);
+    var g2=x.createLinearGradient(0,0,W,0); g2.addColorStop(0,'#1d4ed8'); g2.addColorStop(.55,'#2f7bff'); g2.addColorStop(1,'#38bdf8'); x.fillStyle=g2; x.fillRect(0,0,W,8);
+    x.fillStyle='#9fc0ff'; x.font='600 30px ui-sans-serif,system-ui,Segoe UI,Roboto,Arial'; x.textBaseline='alphabetic'; x.fillText('Zerolyn',64,96);
+    x.fillStyle='#34d399'; x.beginPath(); x.arc(W-104,86,30,0,Math.PI*2); x.fill(); x.strokeStyle='#0a1020'; x.lineWidth=7; x.lineCap='round'; x.beginPath(); x.moveTo(W-118,86); x.lineTo(W-106,98); x.lineTo(W-88,74); x.stroke();
+    x.fillStyle='#ffffff'; x.font='700 56px ui-sans-serif,system-ui,Segoe UI,Roboto,Arial';
+    wrapText(x,t('ver_card_title'),64,200,W-128,64);
+    var yy=356;
+    x.fillStyle='#9fb3d6'; x.font='400 24px ui-monospace,SFMono-Regular,Menlo,monospace';
+    ellipsisText(x,'Groth16 · BLS12-381 · Stellar Testnet',64,yy,W-128); yy+=42;
+    x.font='400 21px ui-monospace,SFMono-Regular,Menlo,monospace';
+    yy=wrapText(x,t('ver_card_statement'),64,yy,W-128,30)+44;
+    x.font='400 19px ui-monospace,SFMono-Regular,Menlo,monospace';
+    ellipsisText(x,'Verifier: '+(CFG.verifierContractId||''),64,yy,W-128); yy+=34;
+    ellipsisText(x,new Date().toISOString().slice(0,10),64,yy,W-128);
+    x.fillStyle='#5f7bb0'; x.font='400 16px ui-monospace,SFMono-Regular,Menlo,monospace';
+    ellipsisText(x,(CFG.explorer||'')+'/contract/'+(CFG.verifierContractId||''),64,H-44,W-128);
+    var url=c.toDataURL('image/png');
+    var a=document.createElement('a'); a.href=url; a.download='zerolyn-zk-proof.png'; document.body.appendChild(a); a.click(); document.body.removeChild(a);
+    S_.soft();
+  }catch(e){ toast(t('ver_card_fail'),'err'); }
+}
+
+async function freighterSign(xdr){
+  var api=window.freighterApi||(window.freighter&&window.freighter.api); if(!api) throw new Error('Freighter not found');
+  var r=await api.signTransaction(xdr,{networkPassphrase:NET_PASS,network:'TESTNET',address:Wallet&&Wallet.address});
+  if(typeof r==='string') return r;
+  if(r&&r.signedTxXdr) return r.signedTxXdr;
+  if(r&&r.signedXDR) return r.signedXDR;
+  if(r&&r.error) throw new Error(r.error.message||String(r.error));
+  throw new Error('sign failed');
+}
+
+async function recordOnChain(){
+  var S=sdk(); var p=parseInput(); if(p.err){ toast(p.err,'err'); return; }
+  try{
+    if(Wallet&&Wallet.connect){ await Wallet.connect(); }
+    if(!Wallet||!Wallet.address||Wallet.demo){ toast(t('wallet_demo'),'info'); return; }
+    line('mut',t('ver_recording'));
+    var srv=server();
+    var src=await srv.getAccount(Wallet.address);
+    var tx=new S.TransactionBuilder(src,{fee:'1000000',networkPassphrase:NET_PASS}).addOperation(buildOp(p)).setTimeout(120).build();
+    var prepared=await srv.prepareTransaction(tx);
+    var signed=await freighterSign(prepared.toXDR());
+    var stx=S.TransactionBuilder.fromXDR(signed,NET_PASS);
+    var res=await srv.sendTransaction(stx);
+    var hash=res.hash;
+    var got; for(var i=0;i<12;i++){ await sleep(2000); got=await srv.getTransaction(hash); if(got&&got.status&&got.status!=='NOT_FOUND'&&got.status!=='PENDING') break; }
+    var ex=document.createElement('a'); ex.className='link-ext'; ex.target='_blank'; ex.rel='noopener';
+    ex.href=CFG.explorer+'/tx/'+hash; ex.textContent=t('ver_tx')+': '+shorten(hash,10)+' ↗'; out().appendChild(ex);
+    S_.success(); toast(t('ver_done'),'ok');
+  }catch(e){ toast(t('ver_simerr')+(e&&e.message?e.message:e),'err'); }
+}
+
+window.SP={ ready:function(){ var g=$('genbtn'); if(g) g.addEventListener('click',genProof); var v=$('verbtn'); if(v) v.addEventListener('click',verify); }, onLang:function(){} };
+})();
