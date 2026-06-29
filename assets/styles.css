@@ -258,3 +258,10 @@ ul.tight li{margin:4px 0;color:var(--ink-soft);font-size:14.5px}
 /* QR / SEP-7: keep the scannable code, hide the raw payment URI so it never overflows */
 .qr-box{word-break:break-all;overflow-wrap:anywhere;max-width:100%}
 #qrhint{display:none}
+
+/* ---- ecosystem page polish ---- */
+.tag{white-space:nowrap}
+body[data-title-key="ecosystem_title"] .section h3.eyebrow{margin:34px 0}
+body[data-title-key="ecosystem_title"] .panel-head{flex-wrap:wrap}
+body[data-title-key="ecosystem_title"] .panel-head h3{min-width:0}
+body[data-title-key="ecosystem_title"] .panel-head .tag{flex:none}
