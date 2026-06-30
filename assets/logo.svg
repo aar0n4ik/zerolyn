@@ -1,0 +1,11 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 48 48" width="256" height="256" role="img" aria-label="Zerolyn">
+  <defs>
+    <linearGradient id="g" x1="0" y1="0" x2="48" y2="48" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#1d4ed8"/>
+      <stop offset=".5" stop-color="#2f7bff"/>
+      <stop offset="1" stop-color="#38bdf8"/>
+    </linearGradient>
+  </defs>
+  <path d="M24 3.2l16.4 5.7c.8.3 1.4 1.1 1.4 2v9.8c0 10.4-6.9 19.6-16.9 23.1a2.6 2.6 0 0 1-1.8 0C13.1 40.3 6.2 31.1 6.2 20.7v-9.8c0-.9.6-1.7 1.4-2z" fill="url(#g)"/>
+  <path d="M24 14.2L33.4 23.6H28V33H20V23.6H14.6Z" fill="#fff"/>
+</svg>
