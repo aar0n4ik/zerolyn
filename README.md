@@ -6,7 +6,9 @@
 
 **About the builder.** I'm **Bohdan — a 17-year-old developer**, and I built Zerolyn entirely on my own: the Circom circuit, the Soroban contracts, and this app. I'm in this for the long run — I want to build my future in real-world zero-knowledge payments **together with Stellar and the Stellar Development Foundation**, and this hackathon is my first step toward that.
 
-Live demo: a multi-page web app in `index.html` + `assets/` (deploys to Vercel as a static site).
+Live demo: https://youtu.be/Y6GtDbFviXw?is=wzNCohnHuTXZkUTs 
+
+A multi-page web app in `index.html` + `assets/` (deploys to Vercel as a static site).
 The Soroban contracts are **deployed and live on Stellar Testnet** — see the IDs below — and both the
 **Verify** page and the **Send** page generate a real Groth16 proof in your browser and verify it **on-chain**.
 
