@@ -199,7 +199,7 @@ python3 -m http.server 8080
 - [x] The on-chain circuit is meaningful (compliance + solvency), not a toy
 - [x] Built on Stellar (Soroban BLS12-381 verifier, USDC/EURC, Freighter/WalletConnect, Horizon, SEP standards)
 - [x] Soroban contracts deployed & callable on Stellar Testnet (IDs above)
-- [ ] Submit on DoraHacks before the deadline
+- [x] Submit on DoraHacks before the deadline
 
 ## Author
 
